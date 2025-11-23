@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Parking Smart Platform - Ultimate Edition (3D Realistic)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1f2937;
+            overflow-x: hidden;
+        }
+        
+        /* 1. Core Colors & Themes */
+        :root {
+            --primary-color: #1a4f8d; /* Deep Campus Blue */
+            --accent-color: #059669; /* Emerald Green */
+            --background-light: #f0f4f8;
+        }
+
+        .primary-color { background-color: var(--primary-color); }
+        .accent-color { background-color: var(--accent-color); }
+        .text-primary { color: var(--primary-color); }
+        .text-accent { color: var(--accent-color); }
+        .border-primary { border-color: var(--primary-color); }
+        .bg-f0f4f8 { background-color: var(--background-light); }
+
+        /* 2. Scrollbar Customization */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; }
+
+        /* 3. Hero Section Styling */
+        .hero-bg-gradient {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #2563eb 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-bg-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100%" height="100%" fill="url(%23dots)"/></svg>') repeat;
+            opacity: 0.5;
+            z-index: 0;
+        }
+        .cta-button-hero {
+            z-index: 10;
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            animation: pulse-shadow 2s infinite;
+        }
+        .cta-button-hero:hover {
+            box-shadow: 0 16px 30px rgba(5, 150, 105, 0.6), 0 0 0 4px rgba(5, 150, 105, 0.3);
+            transform: scale(1.1);
+        }
+        @keyframes pulse-shadow {
+            0% { box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3); }
+            50% { box-shadow: 0 12px 20px rgba(5, 150, 105, 0.6); }
+            100% { box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3); }
+        }
+
+        /* 4. Scroll Reveal Animation */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.19, 1, 0.22, 1), transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        .scroll-reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 5. Feature Card Hover Animation */
+        .feature-card {
+            transition: all 0.4s ease;
+            border-left: 5px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 79, 141, 0.05); /* Light blue overlay */
+            transition: left 0.3s ease;
+        }
+        .feature-card:hover::before {
+            left: 0;
+        }
+        .feature-card:hover {
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid var(--primary-color);
+            transform: translateY(-8px);
+        }
+
+        /* 6. 3D Canvas Styling */
+        #three-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: inherit;
+        }
+
+        /* 7. Animated Flow Diagram (Custom SVG Background) */
+        .flow-diagram-section {
+            background-color: #f7f9fd;
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#e0f2f7;stop-opacity:1" /><stop offset="100%" style="stop-color:#ffffff;stop-opacity:1" /></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/></svg>');
+        }
+        
+        /* 8. Fix for Lot Status Container Stacking */
+        #lot-status-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* space-y-6 is equivalent to gap-y-6 or 1.5rem */
+            width: 100%; /* Ensures it fills its grid column */
+        }
+        
+    </style>
+</head>
+<body>
+    <header class="sticky top-0 z-50 bg-white shadow-xl transition duration-500">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-5 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <svg class="w-9 h-9 text-primary animate-bounce-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="animation-duration: 4s;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <span class="text-3xl font-extrabold text-primary tracking-wide">Loca<span class="text-accent">Park</span></span>
+            </div>
+            <div class="hidden md:flex space-x-10 text-gray-700 font-semibold">
+                <a href="#lots" class="hover:text-primary transition duration-200 relative group">Status<span class="absolute left-0 bottom-0 w-full h-0.5 bg-accent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                <a href="#solutions" class="hover:text-primary transition duration-200 relative group">Technology<span class="absolute left-0 bottom-0 w-full h-0.5 bg-accent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                <a href="#data" class="hover:text-primary transition duration-200 relative group">Data Intelligence<span class="absolute left-0 bottom-0 w-full h-0.5 bg-accent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                <a href="#booking" class="hover:text-primary transition duration-200 relative group">Reserve Spot<span class="absolute left-0 bottom-0 w-full h-0.5 bg-accent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+            </div>
+            <a href="admin-login.html" class="hidden md:inline-block bg-blue-600 text-white px-7 py-3 rounded-full font-bold hover:bg-opacity-80 transition duration-300 shadow-lg transform hover:scale-105">
+                Admin Portal
+            </a>
+            <button class="md:hidden text-gray-600 hover:text-primary">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+    </header>
+
+    <section class="hero-bg-gradient py-24 sm:py-40 text-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <h1 class="text-6xl sm:text-8xl font-black mb-6 leading-tight drop-shadow-2xl scroll-reveal" style="transition-delay: 0s;">
+                Eliminate Campus Traffic Chaos
+            </h1>
+            <p class="text-xl sm:text-2xl mb-12 opacity-90 max-w-5xl mx-auto font-light scroll-reveal" style="transition-delay: 0.2s;">
+                Full-stack intelligent platform utilizing IoT and AI to deliver the fastest parking experience for students, faculty, and visitors. No more circling.
+            </p>
+            <a href="#booking" class="cta-button-hero inline-flex items-center accent-color text-white px-12 py-5 rounded-full font-extrabold text-xl shadow-2xl scroll-reveal" style="transition-delay: 0.4s;">
+                Secure Your Parking Pass
+                <svg class="w-6 h-6 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+            </a>
+        </div>
+    </section>
+
+    <section id="lots" class="py-24 bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-5xl font-extrabold text-center mb-4 text-primary scroll-reveal">Interactive 3D Campus Parking Status</h2>
+            <p class="text-xl text-center text-gray-500 mb-16 scroll-reveal">Explore a highly realistic 3D model of the campus. Click and drag to rotate the view. Parking lot colors update in real-time based on occupancy.</p>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                
+                <div class="lg:col-span-8 bg-gray-50 p-2 rounded-3xl shadow-2xl border border-gray-200 scroll-reveal" style="transition-delay: 0.1s;">
+                    <div id="canvas-container" class="relative w-full h-[600px] rounded-2xl overflow-hidden">
+                        <canvas id="three-canvas"></canvas>
+                        <div id="loading-indicator" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/80 transition-opacity duration-500">
+                            <svg class="animate-spin h-10 w-10 text-primary" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="ml-3 text-lg text-primary mt-4">Loading Ultra-Detailed 3D Campus Scene...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="lot-status-container" class="lg:col-span-4 space-y-6">
+                    </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="solutions" class="py-24 flow-diagram-section">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-5xl font-extrabold text-center mb-4 text-primary scroll-reveal">How Our Smart Platform Works</h2>
+        <p class="text-xl text-center text-gray-600 mb-16 max-w-4xl mx-auto scroll-reveal">Our IoT-based system provides a full-stack approach to solving campus congestion and maximizing efficiency.</p>
+        
+        <div class="w-full bg-white p-10 rounded-3xl shadow-2xl border border-gray-200 scroll-reveal" style="transition-delay: 0.2s;">
+            
+            <h3 class="text-3xl font-bold text-center mb-12 text-primary tracking-wide">
+                Integrated IoT Data Flow Diagram
+            </h3>
+
+            <div class="relative flex justify-between items-start text-center py-8">
+                
+                <div class="absolute inset-x-0 top-[25%] h-0.5 bg-gray-200 z-0"></div>
+
+                <div class="flex-1 px-4 relative z-10 flow-stage transition duration-500 ease-in-out hover:scale-105" style="transition-delay: 0s;">
+                    <div class="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-xl">
+                        <svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.55 4.55M19 14.55L14.45 19m4.55-4.45L15 10m-3-4l-3 3-3-3m3 3V4m0 16v-2"></path></svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-2">IoT Sensors & Camera Feeds</h4>
+                    <p class="text-base text-gray-600">Real-time occupancy detection via physical sensors and existing security cameras (Vision Computing).</p>
+                </div>
+
+                <div class="flex-1 px-4 relative z-10 flow-stage transition duration-500 ease-in-out hover:scale-105" style="transition-delay: 0.1s;">
+                    <div class="w-20 h-20 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-xl">
+                        <svg class="w-10 h-10 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m4 0h1M7 5h1m4 0h1m4 0h1M7 20h1m4 0h1m4 0h1M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"></path></svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-2">Data Layer Integration</h4>
+                    <p class="text-base text-gray-600">Seamless integration with mobile apps, parking meters, and legacy gate systems for central data consolidation.</p>
+                </div>
+
+                <div class="flex-1 px-4 relative z-10 flow-stage transition duration-500 ease-in-out hover:scale-105" style="transition-delay: 0.2s;">
+                    <div class="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-xl">
+                        <svg class="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3s.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-2">Predictive Modeling (AI)</h4>
+                    <p class="text-base text-gray-600">Machine Learning anticipates future occupancy based on class peaks and event schedules to optimize traffic flow.</p>
+                </div>
+
+                <div class="flex-1 px-4 relative z-10 flow-stage transition duration-500 ease-in-out hover:scale-105" style="transition-delay: 0.3s;">
+                    <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-xl">
+                        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-2">User Experience</h4>
+                    <p class="text-base text-gray-600">Instant guidance, pre-booking, and compliance enforcement delivered through a unified mobile and web platform.</p>
+                </div>
+            </div>
+            </div>
+    </div>
+</section>
+
+    <section class="py-24 bg-f0f4f8">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-5xl font-extrabold text-center mb-4 text-primary scroll-reveal">Transforming Parking for the Entire Community</h2>
+            <p class="text-xl text-center text-gray-600 mb-16 max-w-4xl mx-auto scroll-reveal">CampusPark's full-stack solution benefits all stakeholders: Students, Staff, and Administrators.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                
+                <div class="bg-white p-8 rounded-2xl shadow-xl feature-card scroll-reveal">
+                    <a href="index.html" class="block w-full h-full text-current no-underline">
+                        <h3 class="text-3xl font-bold mb-4 text-primary flex items-center">
+                            <svg class="w-8 h-8 mr-3 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                            Students & Drivers
+                        </h3>
+                        <ul class="space-y-3 text-gray-700 mt-6">
+                            <li class="flex items-center"><svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Find Nearby Parking Instantly</li>
+                            <li class="flex items-center"><svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Real-Time Guidance & Map View</li>
+                            <li class="flex items-center"><svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Zero Circling (Less Stress)</li>
+                        </ul>
+                    </a>
+                </div>
+
+                <div class="bg-white p-8 rounded-2xl shadow-xl feature-card scroll-reveal" style="transition-delay: 0.1s;">
+                    <h3 class="text-3xl font-bold mb-4 text-primary flex items-center">
+                        <svg class="w-8 h-8 mr-3 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2v-9a2 2 0 00-2-2h-5m-7 0v2m0 0v2m0 0h14m-7-2v2"></path></svg>
+                        Faculty & Staff
+                    </h3>
+                    <ul class="space-y-3 text-gray-700 mt-6">
+                        <li class="flex items-center"><svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Guaranteed Reserved Zone Access</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Optimized Commute Times</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Simplified Digital Permit Management</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-8 rounded-2xl shadow-xl feature-card scroll-reveal" style="transition-delay: 0.2s;">
+                    <h3 class="text-3xl font-bold mb-4 text-primary flex items-center">
+                        <svg class="w-8 h-8 mr-3 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.018A12.012 12.012 0 0112 3c2.328 0 4.547.78 6.366 2.102M16 12a4 4 0 10-8 0 4 4 0 008 0z"></path></svg>
+                        Admin & Security
+                    </h3>
+                    <ul class="space-y-3 text-gray-700 mt-6">
+                        <li class="flex items-center"><svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Improve Enforcement Compliance</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Automated Capacity Tracking</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Increase Lot Turnover Rate</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="data" class="py-24 primary-color text-white relative overflow-hidden">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <h2 class="text-5xl font-extrabold text-center mb-4 scroll-reveal">Why Parking Data? Instant Access To Intelligence</h2>
+            <p class="text-xl text-center text-gray-300 mb-20 max-w-4xl mx-auto scroll-reveal">Leveraging Big Data Analytics to inform decision-making, optimize space, and streamline campus operations.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+                
+                <div class="p-6 rounded-2xl bg-gray-800 shadow-2xl scroll-reveal transform hover:scale-[1.02] transition duration-300">
+                    <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="color: #c084fc;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1.5-1.5M15 14l6-6M10.5 7.5L4 14.5M4 14.5l3.5 3.5m-3.5-3.5L4 14.5zM12 21a9 9 0 110-18 9 9 0 010 18z"></path></svg>
+                    <h3 class="text-3xl font-bold mb-3 text-accent">Business Automation</h3>
+                    <p class="text-gray-400 font-light">Automate manual tasks like car counting and data consolidation, allowing staff to focus on critical security and maintenance issues.</p>
+                </div>
+                
+                <div class="p-6 rounded-2xl bg-gray-800 shadow-2xl scroll-reveal transform hover:scale-[1.02] transition duration-300" style="transition-delay: 0.1s;">
+                    <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="color: #22d3ee;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    <h3 class="text-3xl font-bold mb-3 text-accent">Business Intelligence</h3>
+                    <p class="text-gray-400 font-light">Explore occupancy, duration, and violation rate data on a single visualization dashboard to inform strategic planning and resource allocation.</p>
+                </div>
+                
+                <div class="p-6 rounded-2xl bg-gray-800 shadow-2xl scroll-reveal transform hover:scale-[1.02] transition duration-300" style="transition-delay: 0.2s;">
+                    <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="color: #fcd34d;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-4 4m0 0l-4-4m4 4V3m6 18h-4m-6 0H6a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4l2-2h4a2 2 0 012 2v10a2 2 0 01-2 2h-4"></path></svg>
+                    <h3 class="text-3xl font-bold mb-3 text-accent">Capacity Modeling</h3>
+                    <p class="text-gray-400 font-light">Use predictive metrics to make smarter inventory allocation decisions, especially during high-demand events like graduation or sporting events.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-5xl font-extrabold text-center mb-4 text-primary scroll-reveal">Smart Parking Solutions On A Roll</h2>
+            <p class="text-xl text-center text-gray-600 mb-16 max-w-4xl mx-auto scroll-reveal">Digitized Parking Locations Across the Campus Ecosystem.</p>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                
+                <div class="scroll-reveal" style="transition-delay: 0s;">
+                    <p class="text-7xl font-extrabold mb-2" style="background: linear-gradient(135deg, #a78bfa, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">6+</p>
+                    <h4 class="text-lg font-bold text-gray-700">Campus Lots</h4>
+                    <p class="text-sm text-gray-500 mt-1">Surface lots, garages, and designated overflow zones.</p>
+                </div>
+
+                <div class="scroll-reveal" style="transition-delay: 0.1s;">
+                    <p class="text-7xl font-extrabold mb-2" style="background: linear-gradient(135deg, #06b6d4, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">800+</p>
+                    <h4 class="text-lg font-bold text-gray-700">Total Capacity</h4>
+                    <p class="text-sm text-gray-500 mt-1">Parking spots digitized and monitored in real-time.</p>
+                </div>
+                
+                <div class="scroll-reveal" style="transition-delay: 0.2s;">
+                    <p class="text-7xl font-extrabold mb-2" style="background: linear-gradient(135deg, #f59e0b, #fcd34d); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">95%</p>
+                    <h4 class="text-lg font-bold text-gray-700">Peak Efficiency</h4>
+                    <p class="text-sm text-gray-500 mt-1">Reduction in time spent searching for parking spots.</p>
+                </div>
+
+                <div class="scroll-reveal" style="transition-delay: 0.3s;">
+                    <p class="text-7xl font-extrabold mb-2" style="background: linear-gradient(135deg, #10b981, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">24/7</p>
+                    <h4 class="text-lg font-bold text-gray-700">System Uptime</h4>
+                    <p class="text-sm text-gray-500 mt-1">Continuous monitoring and automated enforcement.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="booking" class="py-24 bg-f0f4f8">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
+            <h2 class="text-5xl font-extrabold text-center mb-4 text-primary scroll-reveal">Secure Your Parking Spot</h2>
+            <p class="text-xl text-center text-gray-600 mb-16 scroll-reveal">Complete the form below to secure a reservation or check your permit status.</p>
+            
+            <div class="bg-white p-8 md:p-12 rounded-3xl shadow-2xl border-2 border-gray-200 scroll-reveal">
+                <form id="booking-form" onsubmit="handleBooking(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <label for="permitType" class="block text-sm font-semibold text-gray-700 mb-2">Permit Status</label>
+                            <select id="permitType" required class="w-full p-4 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm">
+                                <option value="" disabled selected>Select User Type</option>
+                                <option value="student">Student Permit Holder</option>
+                                <option value="faculty">Faculty/Staff Permit</option>
+                                <option value="visitor">Request Visitor Day Pass</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="lotPreference" class="block text-sm font-semibold text-gray-700 mb-2">Preferred Lot Zone</label>
+                            <select id="lotPreference" required class="w-full p-4 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm">
+                                <option value="" disabled selected>Select Desired Lot</option>
+                                </select>
+                        </div>
+                        <div>
+                            <label for="licensePlate" class="block text-sm font-semibold text-gray-700 mb-2">License Plate Number</label>
+                            <input type="text" id="licensePlate" placeholder="LPR Tag (e.g., ABC 123)" required class="w-full p-4 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <label for="bookingDate" class="block text-sm font-semibold text-gray-700 mb-2">Parking Date</label>
+                            <input type="date" id="bookingDate" required class="w-full p-4 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="bookingTime" class="block text-sm font-semibold text-gray-700 mb-2">Estimated Arrival Time</label>
+                            <input type="time" id="bookingTime" required class="w-full p-4 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary transition duration-150 shadow-sm">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full cta-button-hero bg-primary text-gray-700 px-8 py-4 rounded-full font-bold text-xl hover:bg-opacity-90 transition duration-300 shadow-xl">
+                        Secure Spot & Generate Digital Pass
+                    </button>
+                </form>
+            </div>
+            
+            <div id="message-box" class="mt-12 p-8 rounded-2xl hidden text-center transition duration-700 ease-in-out">
+                </div>
+        </div>
+    </section>
+
+    <footer class="bg-gray-900 text-white py-20 mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-5 gap-10">
+            <div>
+                <h4 class="text-2xl font-black mb-5 text-accent">LocaPark</h4>
+                <p class="text-sm text-gray-400">The smart mobility solution built for the modern educational environment.</p>
+                <div class="mt-6 flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-primary transition"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M22.25 12.001c0-5.52-4.48-10-10-10s-10 4.48-10 10 4.48 10 10 10 10-4.48 10-10zM12 21.5c-5.238 0-9.5-4.262-9.5-9.5s4.262-9.5 9.5-9.5 9.5 4.262 9.5 9.5-4.262 9.5-9.5 9.5zM12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zm0 8.5a4 4 0 110-8 4 4 0 010 8z"/></svg></a>
+                    <a href="#" class="text-gray-400 hover:text-primary transition"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14H8V10h2v6zm4 0h-2V10h2v6zm4-8.5c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v7c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-7z"/></svg></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-lg font-semibold mb-6 text-gray-300">Platform Features</h4>
+                <ul class="space-y-3 text-sm text-gray-400">
+                    <li><a href="#solutions" class="hover:text-white transition">Real-Time IoT</a></li>
+                    <li><a href="#data" class="hover:text-white transition">Predictive Analytics</a></li>
+                    <li><a href="#" class="hover:text-white transition">Enforcement Systems</a></li>
+                    <li><a href="#booking" class="hover:text-white transition">Digital Permit Wallet</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-lg font-semibold mb-6 text-gray-300">User Focus</h4>
+                <ul class="space-y-3 text-sm text-gray-400">
+                    <li><a href="#" class="hover:text-white transition">Student Mobility</a></li>
+                    <li><a href="#" class="hover:text-white transition">Staff Efficiency</a></li>
+                    <li><a href="#" class="hover:text-white transition">Facility Management</a></li>
+                    <li><a href="#" class="hover:text-white transition">Visitor Experience</a></li>
+                </ul>
+            </div>
+              <div>
+                <h4 class="text-lg font-semibold mb-6 text-gray-300">Company</h4>
+                <ul class="space-y-3 text-sm text-gray-400">
+                    <li><a href="#" class="hover:text-white transition">About Us</a></li>
+                    <li><a href="#" class="hover:text-white transition">Careers (12 Openings)</a></li>
+                    <li><a href="#" class="hover:text-white transition">Our Blog</a></li>
+                    <li><a href="#" class="hover:text-white transition">System Status</a></li>
+                </ul>
+            </div>
+            <div class="col-span-2 md:col-span-1">
+                <h4 class="text-lg font-semibold mb-6 text-gray-300">Get Mobile</h4>
+                <p class="text-sm mb-4 text-gray-400">Download the official companion app today.</p>
+                <div class="flex flex-col space-y-3">
+                    <img src="https://placehold.co/140x45/374151/ffffff?text=iOS+Download" alt="App Store" class="h-[45px] rounded-lg cursor-pointer shadow-lg transition transform hover:scale-105" onerror="this.onerror=null;this.src='https://placehold.co/140x45/374151/ffffff?text=iOS+Download'">
+                    <img src="https://placehold.co/140x45/374151/ffffff?text=Android+Download" alt="Google Play" class="h-[45px] rounded-lg cursor-pointer shadow-lg transition transform hover:scale-105" onerror="this.onerror=null;this.src='https://placehold.co/140x45/374151/ffffff?text=Android+Download'">
+                </div>
+            </div>
+        </div>
+        <div class="mt-16 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
+            &copy; <span id="current-year"></span> CampusPark Smart Platform. All Rights Reserved. | Terms & Privacy
+        </div>
+    </footer>
+
+    <div id="demoModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 transition-opacity duration-300">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm m-4 transform transition-transform duration-500 relative">
+            <h3 class="text-3xl font-bold mb-4 text-primary">Admin Portal Login</h3>
+            <p class="text-gray-600 mb-6">Secure access to the management dashboard for facility administration.</p>
+            <form onsubmit="closeModal(event)">
+                <div class="mb-5">
+                    <label for="demoEmail" class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                    <input type="email" id="demoEmail" placeholder="admin@school.edu" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary shadow-inner" required>
+                </div>
+                <div class="mb-6">
+                    <label for="demoPassword" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                    <input type="password" id="demoPassword" placeholder="********" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary shadow-inner" required>
+                </div>
+                <button type="submit" class="w-full bg-primary text-white px-4 py-3 rounded-xl font-bold hover:bg-opacity-90 transition duration-300 shadow-xl">
+                    Authenticate & Enter
+                </button>
+            </form>
+            <button onclick="document.getElementById('demoModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // 1. Data Structure for Parking Lots 
+        const mainBuildingPos = {x: -20, z: 0};
+        const mainBuildingSize = {height: 40, width: 80, depth: 30};
+        const campusLots = [
+            // Lot A: Front-Left (High availability)
+            { id: 'lotA', name: 'Lot A - Student', capacity: 150, available: 120, type: 'student', position: {x: mainBuildingPos.x - 45, z: mainBuildingPos.z + 5}, mesh: null, spots: 30, depth: 25, width: 30 },
+            // Lot B: Front-Right (Limited availability)
+            { id: 'lotB', name: 'Lot B - Faculty/Admin', capacity: 50, available: 15, type: 'faculty', position: {x: mainBuildingPos.x + 35, z: mainBuildingPos.z - 20}, mesh: null, spots: 15, depth: 20, width: 15 },
+            // Lot C: Far Back (Critical availability, simulating a congested lot)
+            { id: 'lotC', name: 'Lot C - Visitor Center', capacity: 200, available: 5, type: 'visitor', position: {x: mainBuildingPos.x + 50, z: mainBuildingPos.z + 65}, mesh: null, spots: 40, depth: 15, width: 40 },
+        ];
+        
+        // 2. 3D Scene Variables
+        let scene, camera, renderer, controls, lotMeshes = {};
+        const canvasContainer = document.getElementById('canvas-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        let brickTexture = null; 
+        
+        // Three.js colors & Materials (Refined for PBR/Realism)
+        const COLORS = {
+            CRITICAL: 0xff4757,
+            LIMITED: 0xffc72d,
+            HIGH: 0x27ae60,
+            GROUND: 0x4f772d, // Grass Green
+            ROAD: 0x3d4147, // Darker Asphalt
+            CURB: 0x95a5a6, // Concrete Curb
+            BUILDING_MAIN: 0xf4f4f4, // Light Cream/White
+            BRICK_RED: 0x8b0000, // Deep Red Brick
+            WINDOW_FRAME: 0x2c3e50, // Dark Window Frames
+            GLASS: 0x87ceeb, // Sky Blue/Reflective Glass
+            TEXT_COLOR: 0x1a4f8d, // Campus Blue for text
+            TREE_LEAVES: 0x38761d,
+            TREE_TRUNK: 0x8a5223,
+            ROAD_MARKING: 0xf1c40f,
+            SKY_TOP: 0x87ceeb, // Light Sky
+            SKY_BOTTOM: 0xf0f8ff, // Near horizon
+        };
+        const carColors = [0x54a0ff, 0xeb3b5a, 0x2d98da, 0xf7b731, 0x26de81, 0x8395a7, 0x9b59b6, 0xe74c3c];
+        const personColors = [0x1abc9c, 0xf1c40f, 0x9b59b6, 0x3498db, 0xe67e22, 0x2ecc71]; // Bright colors for people
+
+        
+        // Utility function to get color based on availability
+        function getLotColor(lot) {
+            const ratio = lot.available / lot.capacity;
+            if (ratio < 0.15) return COLORS.CRITICAL;
+            if (ratio < 0.4) return COLORS.LIMITED;
+            return COLORS.HIGH;
+        }
+
+        const textureLoader = new THREE.TextureLoader();
+
+        // Function to create a realistic skybox (Gradient simulation)
+        function createSkybox() {
+            // Shader code for a seamless gradient sky (omitted for brevity, assume definition is correct)
+            const vertexShader = `
+                varying vec3 vWorldPosition;
+                void main() {
+                    vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+                    vWorldPosition = worldPosition.xyz;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+                }
+            `;
+            const fragmentShader = `
+                uniform vec3 topColor;
+                uniform vec3 bottomColor;
+                uniform float offset;
+                uniform float exponent;
+                varying vec3 vWorldPosition;
+                void main() {
+                    float h = normalize( vWorldPosition + offset ).y;
+                    gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( 0.0, h ), exponent ), 0.0 ) ), 1.0 );
+                }
+            `;
+            const uniforms = {
+                topColor: { value: new THREE.Color(COLORS.SKY_TOP) },
+                bottomColor: { value: new THREE.Color(COLORS.SKY_BOTTOM) },
+                offset: { value: 33 },
+                exponent: { value: 0.6 }
+            };
+
+            const skyGeo = new THREE.SphereGeometry(500, 32, 15);
+            const skyMat = new THREE.ShaderMaterial({
+                uniforms: uniforms,
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                side: THREE.BackSide
+            });
+            scene.add(new THREE.Mesh(skyGeo, skyMat));
+        }
+        
+        // Function to add 3D Text Label (Significantly scaled up)
+        function createBuildingLabel(text, position, size, color) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 2048; // Increased resolution
+            canvas.height = 256; // Increased resolution
+            context.font = 'Bold 160pt Inter, Arial'; // Larger font
+            context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text, canvas.width / 2, canvas.height / 2);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            
+            // Adjust plane size based on text length and desired scale
+            const planeGeometry = new THREE.PlaneGeometry(100, 15); 
+            const planeMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide, depthTest: false });
+            const textPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+            
+            // Repositioning for prominent display on the main facade
+            textPlane.position.set(position.x, position.y + size.height * 0.2 + 5, position.z + size.depth/2 + 0.1); 
+            textPlane.rotation.y = 0; 
+            textPlane.scale.set(0.5, 0.5, 0.5); // Adjusted scale for visibility
+            
+            scene.add(textPlane);
+        }
+
+        // 3. Three.js Initialization and Setup 
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            
+            const aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+            camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
+            camera.position.set(50, 60, 100); 
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.getElementById('three-canvas') });
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.minDistance = 50;
+            controls.maxDistance = 250;
+            controls.maxPolarAngle = Math.PI / 2.2;
+
+            // Load texture (using placeholder)
+            textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/brick_diffuse.jpg', 
+                function (texture) {
+                    brickTexture = texture;
+                    brickTexture.wrapS = THREE.RepeatWrapping;
+                    brickTexture.wrapT = THREE.RepeatWrapping;
+                    brickTexture.repeat.set(5, 5); 
+                    createCampusBuildings();
+                },
+                undefined,
+                function (err) {
+                    console.warn('Brick texture failed to load, falling back to solid color.');
+                    createCampusBuildings();
+                }
+            );
+
+            // Lighting (Sunlight with shadows)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            directionalLight.position.set(100, 120, 80);
+            directionalLight.target.position.set(0, 0, 0);
+            directionalLight.castShadow = true;
+            
+            directionalLight.shadow.mapSize.width = 4096;
+            directionalLight.shadow.mapSize.height = 4096;
+            directionalLight.shadow.camera.near = 10;
+            directionalLight.shadow.camera.far = 400;
+            directionalLight.shadow.camera.left = -100;
+            directionalLight.shadow.camera.right = 100;
+            directionalLight.shadow.camera.top = 100;
+            directionalLight.shadow.camera.bottom = -100;
+            scene.add(directionalLight);
+            
+            // Ground Plane (PBR Material for realism)
+            const groundGeometry = new THREE.PlaneGeometry(300, 300);
+            const groundMaterial = new THREE.MeshStandardMaterial({ color: COLORS.GROUND, metalness: 0.1, roughness: 0.8, side: THREE.DoubleSide });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            createSkybox();
+        }
+
+        // Central function to create all scene elements after initialization
+        function createCampusBuildings() {
+            // --- Campus Buildings ---
+            
+            const mainBuildingSize = {height: 40, width: 80, depth: 30}; 
+            
+            // 1. The Main Angeles University Foundation Building
+            createAUFBuilding(mainBuildingPos, mainBuildingSize);
+            createBuildingLabel("ANGELES UNIVERSITY FOUNDATION", mainBuildingPos, mainBuildingSize, COLORS.TEXT_COLOR);
+            
+            // 2. Annex Building (Left/Rear)
+            createDetailedBuilding({x: -65, z: 10}, 25, 30, 20, 5, { style: 'modern' }); 
+            
+            // 3. Admin Tower (Right/Rear)
+            createDetailedBuilding({x: 45, z: -10}, 65, 20, 20, 18, { style: 'tower', accent: 0xf1c40f });
+
+            // 4. Roads, Parking, and Environment
+            createRoad({x: -10, z: 50}, 200, 12, true); // Main Front Road (Horizontal)
+            createRoad({x: 0, z: 0}, 150, 10, false); // Vertical Road (Splits the scene)
+
+            // Sidewalks/Curbs along the main building front
+            const curbFront = createCurb({x: -10, z: mainBuildingPos.z + mainBuildingSize.depth/2 + 6.5}, mainBuildingSize.width + 5, true); 
+            const curbLeft = createCurb({x: mainBuildingPos.x - mainBuildingSize.width/2 - 6.5, z: 10}, mainBuildingSize.depth * 2.5, false);
+
+            // Trees and street furniture
+            createTree({x: 5, z: 40}, 15, 7);
+            createTree({x: -50, z: -10}, 12, 6);
+            createLamppost({x: -15, z: 60});
+            createLamppost({x: 25, z: 60});
+
+            // Create Parking Lots and Cars (Visible Placement)
+            campusLots.forEach(lot => {
+                lot.mesh = createParkingLot(lot);
+                scene.add(lot.mesh);
+                lotMeshes[lot.id] = lot.mesh;
+            });
+            
+            // --- ENHANCEMENT: ADD MORE CARS ON ROADS ---
+            // Cars on horizontal road
+            createCar({x: -30, y: 0.1, z: 55}, carColors[0], 0);
+            createCar({x: 5, y: 0.1, z: 55}, carColors[1], 0);
+            createCar({x: 45, y: 0.1, z: 45}, carColors[3], 0);
+
+            // Cars on vertical road
+            createCar({x: 5, y: 0.1, z: -55}, carColors[2], Math.PI/2);
+            createCar({x: -5, y: 0.1, z: 10}, carColors[4], Math.PI/2);
+            createCar({x: 5, y: 0.1, z: 30}, carColors[7], Math.PI/2);
+
+
+            // --- ENHANCEMENT: ADD PEOPLE ---
+            // People near the main building entrance
+            createPerson({x: mainBuildingPos.x - 5, y: 0, z: mainBuildingPos.z + 20}, personColors[0]);
+            createPerson({x: mainBuildingPos.x + 5, y: 0, z: mainBuildingPos.z + 22}, personColors[1]);
+            
+            // People walking on the front curb
+            createPerson({x: 10, y: 0, z: 60}, personColors[2]);
+            createPerson({x: -40, y: 0, z: 60}, personColors[3]);
+            
+            // People near the annex building
+            createPerson({x: -70, y: 0, z: 20}, personColors[4], Math.PI/2);
+            createPerson({x: -60, y: 0, z: 25}, personColors[5], -Math.PI/2);
+
+            
+            // Hide loading indicator
+            loadingIndicator.style.opacity = '0';
+            setTimeout(() => loadingIndicator.classList.add('hidden'), 500);
+
+            updateLotColors();
+            animate();
+        }
+
+        // NEW FUNCTION: Create a simple stylized person
+        function createPerson(position, color, rotationY = 0) {
+            const group = new THREE.Group();
+            group.position.set(position.x, 0, position.z);
+            group.rotation.y = rotationY;
+
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: color, metalness: 0.1, roughness: 0.5 });
+            const headMaterial = new THREE.MeshStandardMaterial({ color: 0xe0ac69, metalness: 0.1, roughness: 0.5 }); // Skin tone
+
+            // Body (Cylinder, ~4 units high)
+            const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 4, 8);
+            const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            bodyMesh.position.y = 2.0;
+            bodyMesh.castShadow = true;
+            group.add(bodyMesh);
+
+            // Head (Sphere)
+            const headGeometry = new THREE.SphereGeometry(0.75, 12, 12);
+            const headMesh = new THREE.Mesh(headGeometry, headMaterial);
+            headMesh.position.y = 4.75;
+            headMesh.castShadow = true;
+            group.add(headMesh);
+            
+            scene.add(group);
+            return group;
+        }
+
+
+        // Specific building generator for Angeles University Foundation (omitted for brevity, remains unchanged)
+        function createAUFBuilding(position, size) {
+            const group = new THREE.Group();
+            const { height, width, depth } = size;
+
+            const mainMaterial = new THREE.MeshStandardMaterial({ color: COLORS.BUILDING_MAIN, metalness: 0.1, roughness: 0.6 });
+            const brickMaterial = new THREE.MeshStandardMaterial({
+                color: brickTexture ? 0xffffff : COLORS.BRICK_RED, 
+                map: brickTexture,
+                metalness: 0.05,
+                roughness: 0.9
+            });
+            const windowFrameMaterial = new THREE.MeshPhongMaterial({ color: COLORS.WINDOW_FRAME, shininess: 5 }); 
+            const glassMaterial = new THREE.MeshStandardMaterial({ color: COLORS.GLASS, transparent: true, opacity: 0.8, metalness: 0.8, roughness: 0.2 });
+
+            // 1. Lower Base Section 
+            const lowerHeight = height * 0.2;
+            const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(width, lowerHeight, depth), mainMaterial);
+            lowerBody.position.set(position.x, lowerHeight / 2, position.z);
+            lowerBody.castShadow = true;
+            group.add(lowerBody);
+            
+            // 2. Middle Section 
+            const middleHeight = height * 0.45;
+            const middleY = lowerHeight + middleHeight / 2;
+            const middleDepth = depth * 0.9;
+            
+            // Recessed Core Structure (White)
+            const recessedCore = new THREE.Mesh(new THREE.BoxGeometry(width * 0.95, middleHeight, middleDepth), mainMaterial);
+            recessedCore.position.set(position.x, middleY, position.z);
+            recessedCore.castShadow = true;
+            group.add(recessedCore);
+
+            // Brick Bands 
+            const bandHeight = middleHeight * 0.2;
+            
+            // Top Brick Band (Front)
+            const topBrickBand = new THREE.Mesh(new THREE.BoxGeometry(width * 1.0, bandHeight, 2.5), brickMaterial);
+            topBrickBand.position.set(position.x, middleY + middleHeight/2 - bandHeight/2, position.z + depth / 2 + 1.25);
+            group.add(topBrickBand);
+            
+            // Lower Brick Band (Front)
+            const lowerBrickBand = new THREE.Mesh(new THREE.BoxGeometry(width * 1.0, bandHeight, 2.5), brickMaterial);
+            lowerBrickBand.position.set(position.x, middleY - middleHeight/2 + bandHeight/2, position.z + depth / 2 + 1.25);
+            group.add(lowerBrickBand);
+            
+            // Vertical Brick Side Walls 
+            const sideBrickWidth = width * 0.15;
+            const sideBrickOffset = width/2 - sideBrickWidth/2;
+            
+            const sideBrickLeft = new THREE.Mesh(new THREE.BoxGeometry(sideBrickWidth, middleHeight + 3, depth), brickMaterial);
+            sideBrickLeft.position.set(position.x - sideBrickOffset, middleY + 1, position.z);
+            group.add(sideBrickLeft);
+
+            const sideBrickRight = sideBrickLeft.clone();
+            sideBrickRight.position.set(position.x + sideBrickOffset, middleY + 1, position.z);
+            group.add(sideBrickRight);
+
+
+            // Windows and Balconies
+            const numFloors = 2; 
+            const floorSeparation = middleHeight / numFloors;
+            const numWindowsPerFloor = 4;
+
+            for (let i = 0; i < numFloors; i++) {
+                const currentY = lowerHeight + (i * floorSeparation) + (floorSeparation / 2);
+                
+                for (let j = 0; j < numWindowsPerFloor; j++) {
+                    const windowX = position.x - (width * 0.3) + (j * (width * 0.6) / (numWindowsPerFloor - 1));
+                    
+                    // Balcony Base (White Ledge)
+                    const balconyBase = new THREE.Mesh(new THREE.BoxGeometry(width * 0.12, 0.5, 3), mainMaterial);
+                    balconyBase.position.set(windowX, currentY - (floorSeparation / 2) - 0.25, position.z + middleDepth / 2 + 1.5);
+                    group.add(balconyBase);
+
+                    // Window Frame (Dark, recessed)
+                    const frameGeometry = new THREE.BoxGeometry(width * 0.1, floorSeparation * 0.7, 0.5);
+                    const frameMesh = new THREE.Mesh(frameGeometry, windowFrameMaterial);
+                    frameMesh.position.set(windowX, currentY, position.z + middleDepth / 2 + 0.5);
+                    group.add(frameMesh);
+                    
+                    // Glass Pane
+                    const glassMesh = new THREE.Mesh(new THREE.BoxGeometry(width * 0.09, floorSeparation * 0.65, 0.1), glassMaterial);
+                    glassMesh.position.set(windowX, currentY, position.z + middleDepth / 2 + 0.5);
+                    group.add(glassMesh);
+
+                    // Balcony Railing (Simple dark line)
+                    const railing = new THREE.Mesh(new THREE.BoxGeometry(width * 0.12, 1, 0.2), windowFrameMaterial);
+                    railing.position.set(windowX, currentY - (floorSeparation / 2) + 0.5, position.z + middleDepth / 2 + 3 - 0.1);
+                    group.add(railing);
+                }
+            }
+
+            // 3. Upper Tower Section
+            const upperHeight = height * 0.3;
+            const upperY = lowerHeight + middleHeight + upperHeight / 2;
+            const upperWidth = width * 0.35;
+            const upperDepth = depth * 0.5;
+
+            const upperBody = new THREE.Mesh(new THREE.BoxGeometry(upperWidth, upperHeight, upperDepth), mainMaterial);
+            upperBody.position.set(position.x, upperY, position.z);
+            upperBody.castShadow = true;
+            group.add(upperBody);
+
+            // Final touch: Roof details 
+            const roofMesh = new THREE.Mesh(new THREE.BoxGeometry(upperWidth * 0.2, 1.5, upperDepth * 0.2), windowFrameMaterial);
+            roofMesh.position.set(position.x + upperWidth * 0.1, upperY + upperHeight/2 + 0.75, position.z + upperDepth * 0.1);
+            group.add(roofMesh);
+
+            scene.add(group);
+            return group;
+        }
+
+        // Function to create a generic detailed building (omitted for brevity, remains unchanged)
+        function createDetailedBuilding(position, height, width, depth, stories, options = {}) {
+            const group = new THREE.Group();
+            options = { style: 'classic', accent: COLORS.BUILDING_ACCENT, ...options };
+            
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: COLORS.BUILDING_MAIN, metalness: 0.1, roughness: 0.7 });
+            const windowMaterial = new THREE.MeshStandardMaterial({ color: COLORS.GLASS, metalness: 0.8, roughness: 0.1, transparent: true, opacity: 0.9 });
+            const frameMaterial = new THREE.MeshPhongMaterial({ color: COLORS.WINDOW_FRAME });
+
+            // Main Body
+            const bodyGeometry = new THREE.BoxGeometry(width, height, depth);
+            const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            bodyMesh.position.set(position.x, height / 2, position.z);
+            bodyMesh.castShadow = true;
+            group.add(bodyMesh);
+
+            // Windows
+            const floorHeight = height / stories;
+            const windowSpacing = width / 4; 
+
+            for (let s = 0; s < stories; s++) {
+                const y = (s * floorHeight) + (floorHeight / 2);
+
+                for (let i = 0; i < 3; i++) {
+                    const x = position.x - windowSpacing + (i * windowSpacing);
+
+                    // Recessed frame
+                    const frame = new THREE.Mesh(new THREE.BoxGeometry(3, floorHeight * 0.6, 0.5), frameMaterial);
+                    frame.position.set(x, y, position.z + depth / 2 + 0.2);
+                    group.add(frame);
+
+                    // Glass
+                    const glass = new THREE.Mesh(new THREE.BoxGeometry(2.8, floorHeight * 0.55, 0.1), windowMaterial);
+                    glass.position.set(x, y, position.z + depth / 2 + 0.4);
+                    group.add(glass);
+                }
+            }
+
+            scene.add(group);
+            return group;
+        }
+
+        // Function to create a realistic car model (omitted for brevity, remains unchanged)
+        function createCar(position, color, rotationY) {
+            const group = new THREE.Group();
+            group.position.set(position.x, 0, position.z);
+            group.rotation.y = rotationY;
+            
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: color, metalness: 0.8, roughness: 0.2 });
+            const windowMaterial = new THREE.MeshStandardMaterial({ color: 0x87cefa, transparent: true, opacity: 0.6, metalness: 0.1, roughness: 0.2 });
+            const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x2c3e50 });
+
+            // Body
+            const bodyGeometry = new THREE.BoxGeometry(4, 1.2, 1.8);
+            const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            bodyMesh.position.y = 0.6;
+            bodyMesh.castShadow = true;
+            group.add(bodyMesh);
+
+            // Cabin (Slanted back)
+            const cabinShape = new THREE.Shape();
+            cabinShape.moveTo(-1, 0);
+            cabinShape.lineTo(1.5, 0);
+            cabinShape.lineTo(1.2, 0.8);
+            cabinShape.lineTo(-0.8, 0.8);
+            cabinShape.lineTo(-1, 0);
+            
+            const extrudeSettings = { depth: 1.6, bevelEnabled: false };
+            const cabinGeometry = new THREE.ExtrudeGeometry(cabinShape, extrudeSettings);
+            const cabinMesh = new THREE.Mesh(cabinGeometry, [windowMaterial, bodyMaterial]);
+            cabinMesh.position.set(-0.5, 1.2, -0.8);
+            cabinMesh.castShadow = true;
+            group.add(cabinMesh);
+
+            // Wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+            const wheelPositions = [
+                { x: -1.3, z: 0.9 }, { x: 1.3, z: 0.9 },
+                { x: -1.3, z: -0.9 }, { x: 1.3, z: -0.9 }
+            ];
+            
+            wheelPositions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.rotation.z = Math.PI / 2;
+                wheel.position.set(pos.x, 0.3, pos.z);
+                group.add(wheel);
+            });
+
+            scene.add(group);
+            return group;
+        }
+
+        // Function to create a parking lot plane with markings and cars (Updated to fill occupied spots)
+        function createParkingLot(lot) {
+            const color = getLotColor(lot);
+            const geometry = new THREE.BoxGeometry(lot.width, 0.3, lot.depth);
+            const material = new THREE.MeshPhongMaterial({ color: color, transparent: true, opacity: 0.8 });
+            const mesh = new THREE.Mesh(geometry, material);
+            
+            mesh.position.set(lot.position.x, 0.15, lot.position.z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            
+            lotMeshes[lot.id] = mesh; 
+            
+            const markingMaterial = new THREE.MeshBasicMaterial({ color: COLORS.ROAD_MARKING });
+            const spotWidth = lot.width / lot.spots;
+            
+            // Calculate how many occupied spots there are
+            const carsToPlace = lot.capacity - lot.available;
+
+            for(let i = 0; i < lot.spots; i++) {
+                // Parking spot line
+                const lineGeometry = new THREE.BoxGeometry(0.1, 0.01, lot.depth * 0.9);
+                const lineMesh = new THREE.Mesh(lineGeometry, markingMaterial);
+                // Calculate position for the left side of the spot
+                const xPos = lot.position.x - (lot.width / 2) + (i * spotWidth);
+                lineMesh.position.set(xPos + spotWidth / 2, 0.3, lot.position.z);
+                scene.add(lineMesh);
+
+                // Add cars based on occupancy 
+                if (i < carsToPlace) {
+                    const carColor = carColors[i % carColors.length];
+                    const carPos = { 
+                        x: xPos + spotWidth / 2, // Center of the spot
+                        y: 0, 
+                        z: lot.position.z - (lot.depth / 2) + 5 // Pushed towards the "back" of the lot
+                    };
+                    createCar(carPos, carColor, 0); // Rotation 0 means facing Z (up the lot depth) 
+                }
+            }
+            
+            return mesh;
+        }
+        
+        // Function to create a detailed road segment (omitted for brevity, remains unchanged)
+        function createRoad(position, length, width, isHorizontal = false) {
+            const group = new THREE.Group();
+            const geometry = new THREE.BoxGeometry(isHorizontal ? length : width, 0.1, isHorizontal ? width : length);
+            const material = new THREE.MeshStandardMaterial({ color: COLORS.ROAD, metalness: 0.1, roughness: 0.9 });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(position.x, 0.05, position.z);
+            mesh.receiveShadow = true;
+            group.add(mesh);
+            
+            // Add center dividing line (dashed)
+            const numDashes = Math.floor((isHorizontal ? length : width) / 5);
+            const dashGeometry = new THREE.BoxGeometry(isHorizontal ? 2 : 0.2, 0.05, isHorizontal ? 0.2 : 2);
+            const dashMaterial = new THREE.MeshBasicMaterial({ color: COLORS.ROAD_MARKING });
+
+            for (let i = -numDashes / 2; i < numDashes / 2; i++) {
+                const dash = new THREE.Mesh(dashGeometry, dashMaterial);
+                const offset = i * 5;
+                if (isHorizontal) {
+                    dash.position.set(position.x + offset, 0.1, position.z);
+                } else {
+                    dash.position.set(position.x, 0.1, position.z + offset);
+                }
+                group.add(dash);
+            }
+
+            scene.add(group);
+            return group;
+        }
+
+        // Function to create a concrete curb/sidewalk (omitted for brevity, remains unchanged)
+        function createCurb(position, length, isHorizontal = false) {
+            const group = new THREE.Group();
+            const height = 0.5;
+            const depth = 3;
+            const geometry = new THREE.BoxGeometry(isHorizontal ? length : depth, height, isHorizontal ? depth : length);
+            const material = new THREE.MeshStandardMaterial({ color: COLORS.CURB, roughness: 0.5 });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(position.x, height / 2, position.z);
+            mesh.receiveShadow = true;
+            group.add(mesh);
+            scene.add(group);
+            return group;
+        }
+
+        // Function to create a detailed tree (omitted for brevity, remains unchanged)
+        function createTree(position, height, radius) {
+            const group = new THREE.Group();
+            
+            // Trunk
+            const trunkGeometry = new THREE.CylinderGeometry(1, 1.5, height, 8);
+            const trunkMaterial = new THREE.MeshStandardMaterial({ color: COLORS.TREE_TRUNK, metalness: 0.0, roughness: 0.8 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.set(position.x, height / 2, position.z);
+            trunk.castShadow = true;
+            group.add(trunk);
+            
+            // Leaves (Icosahedron for complex canopy shape)
+            const leavesGeometry = new THREE.IcosahedronGeometry(radius * 0.9, 1);
+            const leavesMaterial = new THREE.MeshStandardMaterial({ color: COLORS.TREE_LEAVES, metalness: 0.1, roughness: 0.9, side: THREE.DoubleSide });
+            const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+            leaves.position.set(position.x, height * 1.05 + radius * 0.4, position.z);
+            leaves.castShadow = true;
+            group.add(leaves);
+            
+            scene.add(group);
+        }
+        
+        // Function to create a simple lamppost (omitted for brevity, remains unchanged)
+        function createLamppost(position) {
+            const group = new THREE.Group();
+            const postHeight = 15;
+            
+            const postMaterial = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8, roughness: 0.4 });
+            
+            // Post
+            const postGeometry = new THREE.CylinderGeometry(0.2, 0.2, postHeight, 8);
+            const post = new THREE.Mesh(postGeometry, postMaterial);
+            post.position.set(position.x, postHeight / 2, position.z);
+            post.castShadow = true;
+            group.add(post);
+
+            // Arm
+            const armGeometry = new THREE.BoxGeometry(4, 0.2, 0.2);
+            const arm = new THREE.Mesh(armGeometry, postMaterial);
+            arm.position.set(position.x + 2, postHeight - 0.5, position.z);
+            group.add(arm);
+
+            // Light (emissive sphere)
+            const lightGeometry = new THREE.SphereGeometry(1, 8, 8);
+            const lightMaterial = new THREE.MeshBasicMaterial({ color: 0xfff0b5, emissive: 0xfff0b5, emissiveIntensity: 0.8 });
+            const light = new THREE.Mesh(lightGeometry, lightMaterial);
+            light.position.set(position.x + 4, postHeight - 1.5, position.z);
+            group.add(light);
+            
+            // Point Light for the glow effect
+            const pointLight = new THREE.PointLight(0xfff0b5, 1, 30);
+            pointLight.position.set(position.x + 4, postHeight - 1.5, position.z);
+            group.add(pointLight);
+            
+            scene.add(group);
+        }
+
+        // 4. Update Function for Real-Time Status 
+        function updateLotColors() {
+            campusLots.forEach(lot => {
+                const mesh = lotMeshes[lot.id];
+                if (mesh) {
+                    const newColor = getLotColor(lot);
+                    mesh.material.color.set(newColor);
+                }
+            });
+        }
+        
+        // 5. Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) controls.update(); // Update orbit controls
+            if (renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+
+        // 6. UI/Data Rendering and Interactions (Standard functions below)
+
+        function getAvailabilityText(lot) {
+            const ratio = lot.available / lot.capacity;
+            let statusClass = 'text-green-600 bg-green-100';
+            let statusText = 'HIGH Availability';
+
+            if (ratio < 0.15) {
+                statusClass = 'text-red-700 bg-red-100';
+                statusText = 'CRITICAL: Almost Full';
+            } else if (ratio < 0.4) {
+                statusClass = 'text-yellow-700 bg-yellow-100';
+                statusText = 'LIMITED Spots Available';
+            }
+            return { text: statusText, class: statusClass };
+        }
+
+        function renderLotStatus() {
+            const container = document.getElementById('lot-status-container');
+            const lotOptions = document.getElementById('lotPreference');
+            container.innerHTML = '';
+            lotOptions.innerHTML = '<option value="" disabled selected>Select Desired Lot</option>';
+
+            // Loop through all parking lots
+            campusLots.forEach(lot => {
+                const availability = getAvailabilityText(lot);
+                
+                // Populate the dropdown menu
+                const option = document.createElement('option');
+                option.value = lot.id;
+                option.textContent = `${lot.name} (${lot.capacity - lot.available}/${lot.capacity} Occupied)`;
+                lotOptions.appendChild(option);
+
+                // Determine the card accent color based on availability (red for critical)
+                const borderAccent = lot.available < 15 ? 'border-red-500' : 'border-accent';
+
+                // Construct the card HTML, wrapped in a clickable <a> tag
+                const card = `
+                    <a href="reservation.html?lot=${lot.id}" class="block w-full h-full text-current no-underline">
+                        <div class="bg-white p-5 rounded-2xl shadow-xl border-l-4 ${borderAccent} transition duration-300 hover:shadow-2xl hover:translate-y-[-4px] scroll-reveal">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-xl font-bold text-gray-800">${lot.name}</h3>
+                                <span class="text-xs font-semibold px-3 py-1 rounded-full uppercase text-white ${lot.type === 'student' ? 'bg-blue-600' : (lot.type === 'faculty' ? 'bg-indigo-600' : 'bg-gray-500')}">
+                                    ${lot.type}
+                                </span>
+                            </div>
+                            <p class="text-4xl font-extrabold text-primary mb-1">${lot.available}</p>
+                            <p class="text-sm text-gray-500 mb-3">Available Spots (Total: ${lot.capacity})</p>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="h-2.5 rounded-full ${availability.class.split(' ')[0].replace('text-', 'bg-')}" style="width: ${((lot.capacity - lot.available) / lot.capacity) * 100}%"></div>
+                            </div>
+                            <p class="mt-3 text-sm font-medium ${availability.class}">${availability.text}</p>
+                        </div>
+                    </a> 
+                `;
+                container.insertAdjacentHTML('beforeend', card);
+            });
+        }
+
+        function setupScrollReveal() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { rootMargin: '0px', threshold: 0.1 });
+
+            document.querySelectorAll('.scroll-reveal').forEach(element => {
+                observer.observe(element);
+            });
+        }
+
+
+        // Initial setup on load
+        window.onload = function() {
+            renderLotStatus();
+            setupScrollReveal();
+            initThreeJS();
+            
+            window.addEventListener('resize', () => {
+                if (renderer && camera) {
+                    const width = canvasContainer.clientWidth;
+                    const height = canvasContainer.clientHeight;
+                    renderer.setSize(width, height);
+                    camera.aspect = width / height;
+                    camera.updateProjectionMatrix();
+                }
+            });
+        }
+
+        // 7. Booking Logic (Simulation)
+        function handleBooking(event) {
+            event.preventDefault();
+            
+            const permitType = document.getElementById('permitType').value;
+            const lotId = document.getElementById('lotPreference').value;
+            const bookingDate = document.getElementById('bookingDate').value;
+            const bookingTime = document.getElementById('bookingTime').value;
+            const licensePlate = document.getElementById('licensePlate').value;
+            
+            const selectedLot = campusLots.find(lot => lot.id === lotId);
+            
+            if (!/^[A-Z0-9\s\-]{3,10}$/i.test(licensePlate)) {
+                showMessage("Error: Please enter a valid license plate number (e.g., ABC 123).", 'bg-red-50 border-red-500 text-red-700');
+                return;
+            }
+
+            if (selectedLot.available <= 0) {
+                showMessage(`Sorry, ${selectedLot.name} is currently FULL. Please choose another lot or reservation time.`, 'bg-red-50 border-red-500 text-red-700');
+                return;
+            }
+
+            if (selectedLot.type !== permitType && permitType !== 'visitor') {
+                showMessage(`Error: ${selectedLot.name} is reserved for ${selectedLot.type.toUpperCase()} permits only. Please select a valid lot.`, 'bg-yellow-50 border-yellow-500 text-yellow-700');
+                return;
+            }
+
+            selectedLot.available -= 1;
+            renderLotStatus();
+            updateLotColors();
+
+            const confirmationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const successMessage = `
+                <h4 class="text-3xl font-bold mb-3 text-green-700">Reservation Confirmed! 🎉</h4>
+                <p class="text-xl">Your Digital Pass is secured for **${selectedLot.name}**.</p>
+                <div class="mt-6 p-5 rounded-lg bg-green-200 inline-block shadow-lg">
+                    <p class="text-sm font-semibold text-green-800">Confirmation Code (Display this for LPR entry):</p>
+                    <p class="font-mono mt-1 text-3xl font-extrabold text-green-900">${confirmationCode}</p>
+                </div>
+                <p class="mt-6 text-sm text-gray-700">Vehicle LPR: ${licensePlate}. Valid for ${bookingDate} at ${bookingTime}.</p>
+                <p class="mt-2 text-sm text-gray-700 font-medium">Spot availability in ${selectedLot.name} is now ${selectedLot.available}.</p>
+            `;
+
+            showMessage(successMessage, 'bg-green-50 border-4 border-green-500');
+
+            document.getElementById('booking-form').reset();
+        }
+
+        function showMessage(htmlContent, className) {
+            const messageBox = document.getElementById('message-box');
+            messageBox.innerHTML = htmlContent;
+            messageBox.className = `mt-12 p-8 rounded-2xl text-center shadow-2xl transition duration-700 ease-in-out ${className}`;
+            messageBox.classList.remove('hidden');
+            
+            messageBox.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function closeModal(event) {
+            event.preventDefault();
+            
+            const modal = document.getElementById('demoModal');
+            const formContainer = modal.querySelector('.bg-white');
+            
+            formContainer.innerHTML = '<div class="text-primary font-bold p-8 text-center"><svg class="animate-spin h-6 w-6 mr-3 inline text-primary" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Access Granted (Simulated)! Redirecting to Dashboard...</div>';
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                setTimeout(() => renderModalForm(), 1500);
+            }, 1500);
+        }
+
+        function renderModalForm() {
+              const formHTML = `
+                <h3 class="text-3xl font-bold mb-4 text-primary">Admin Portal Login</h3>
+                <p class="text-gray-600 mb-6">Secure access to the management dashboard for facility administration.</p>
+                <form onsubmit="closeModal(event)">
+                    <div class="mb-5">
+                        <label for="demoEmail" class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                        <input type="email" id="demoEmail" placeholder="admin@school.edu" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary shadow-inner" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="demoPassword" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                        <input type="password" id="demoPassword" placeholder="********" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary shadow-inner" required>
+                    </div>
+                    <button type="submit" class="w-full bg-primary text-black px-4 py-3 rounded-xl font-bold hover:bg-opacity-90 transition duration-300 shadow-xl">
+                        Authenticate & Enter
+                    </button>
+                </form>
+                <button onclick="document.getElementById('demoModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            `;
+            const formContainer = document.getElementById('demoModal').querySelector('.bg-white');
+            formContainer.innerHTML = formHTML;
+        }
+    </script>
+</body>
+</html>

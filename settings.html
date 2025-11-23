@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocaPark | Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            /* Copied theme vars */
+            --bg-body: #030712;
+            --bg-panel: rgba(17, 24, 39, 0.6);
+            --primary: #06b6d4;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: var(--bg-body);
+            background-image: 
+                linear-gradient(var(--bg-body) 0%, transparent 100%),
+                radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-body) 60%),
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            padding: 30px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        h1 { margin-top: 0; font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 25px; display: flex; align-items: center; gap: 10px;}
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem; font-weight: 500;}
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            outline: none;
+        }
+        input[type="number"]:focus { border-color: var(--primary); }
+        
+        .actions { display: flex; gap: 15px; margin-top: 30px; }
+        
+        button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .btn-save { background: var(--primary); color: white; }
+        .btn-save:hover { background: #0891b2; }
+        
+        .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-cancel:hover { background: rgba(255,255,255,0.05); color: white; }
+        
+        .helper-text { font-size: 0.8rem; color: #6b7280; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="ph-bold ph-gear"></i> System Configuration</h1>
+        
+        <div class="form-group">
+            <label>Base Rate (Flat Fee)</label>
+            <input type="number" id="baseRate" placeholder="35.00" step="0.50">
+            <div class="helper-text">The initial cost for parking (covers the grace period).</div>
+        </div>
+        
+        <div class="form-group">
+            <label>Hourly Rate (Excess)</label>
+            <input type="number" id="hourlyRate" placeholder="5.00" step="0.50">
+            <div class="helper-text">Added for every hour after the grace period.</div>
+        </div>
+        
+        <div class="form-group">
+            <label>Grace Period (Minutes)</label>
+            <input type="number" id="gracePeriod" placeholder="10">
+            <div class="helper-text">Time allowed before hourly rates apply.</div>
+        </div>
+
+        <div class="actions">
+            <button class="btn-cancel" onclick="window.location.href='index.html'">Cancel</button>
+            <button class="btn-save" onclick="saveConfig()">Save Changes</button>
+        </div>
+    </div>
+
+    <script>
+        // Load existing
+        const defaults = { baseRate: 35, hourlyRate: 5, gracePeriod: 10 };
+        const stored = localStorage.getItem('locapark_settings');
+        const config = stored ? JSON.parse(stored) : defaults;
+
+        document.getElementById('baseRate').value = config.baseRate;
+        document.getElementById('hourlyRate').value = config.hourlyRate;
+        document.getElementById('gracePeriod').value = config.gracePeriod;
+
+        function saveConfig() {
+            const newConfig = {
+                baseRate: document.getElementById('baseRate').value,
+                hourlyRate: document.getElementById('hourlyRate').value,
+                gracePeriod: document.getElementById('gracePeriod').value
+            };
+            localStorage.setItem('locapark_settings', JSON.stringify(newConfig));
+            
+            const btn = document.querySelector('.btn-save');
+            btn.innerText = "Saved!";
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 500);
+        }
+    </script>
+</body>
+</html>

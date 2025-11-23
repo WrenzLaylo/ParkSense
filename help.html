@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LocaPark | User Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      :root {
+        --bg-body: #030712;
+        --bg-panel: rgba(17, 24, 39, 0.6);
+        --primary: #06b6d4;
+        --accent: #6366f1;
+        --border: rgba(255, 255, 255, 0.08);
+        --text-main: #f9fafb;
+        --text-muted: #9ca3af;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-body);
+        background-image: linear-gradient(var(--bg-body) 0%, transparent 100%),
+          radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-body) 60%),
+          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        color: var(--text-main);
+        margin: 0;
+        padding: 40px;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 20px;
+      }
+
+      h1 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-size: 2rem;
+      }
+
+      .back-btn {
+        text-decoration: none;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        transition: 0.2s;
+        background: rgba(0, 0, 0, 0.3);
+      }
+      .back-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+      }
+
+      .guide-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 25px;
+      }
+
+      .guide-card {
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 25px;
+        backdrop-filter: blur(10px);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+        color: var(--primary);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .card-header i {
+        font-size: 1.5rem;
+      }
+
+      .step-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .step-list li {
+        margin-bottom: 12px;
+        display: flex;
+        gap: 10px;
+        line-height: 1.5;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+      }
+
+      .step-list li::before {
+        content: "•";
+        color: var(--accent);
+        font-weight: bold;
+      }
+
+      .highlight {
+        color: var(--text-main);
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1><i class="ph-bold ph-book-bookmark"></i> User Guide</h1>
+        <a href="index.html" class="back-btn"
+          ><i class="ph-bold ph-arrow-left"></i> Return</a
+        >
+      </div>
+
+      <div class="guide-grid">
+        <!-- Mapping -->
+        <div class="guide-card">
+          <div class="card-header">
+            <i class="ph-bold ph-polygon"></i> Mapping Slots
+          </div>
+          <ul class="step-list">
+            <li>
+              Click <span class="highlight">Add Slot</span> in the sidebar.
+            </li>
+            <li>
+              Click <strong>4 points</strong> on the camera feed to outline a
+              parking space.
+            </li>
+            <li>Right-click any slot to <strong>delete</strong> it.</li>
+            <li>Drag existing slots to adjust their position.</li>
+            <li>
+              <strong>Important:</strong> Map empty slots first for better
+              detection accuracy.
+            </li>
+          </ul>
+        </div>
+
+        <!-- Calibration -->
+        <div class="guide-card">
+          <div class="card-header">
+            <i class="ph-bold ph-aperture"></i> Calibration
+          </div>
+          <ul class="step-list">
+            <li>
+              Use <span class="highlight">Calibrate Cam</span> when lighting
+              conditions change significantly.
+            </li>
+            <li>
+              Ensure the parking lot is <strong>empty</strong> (or the mapped
+              slots are empty) before calibrating.
+            </li>
+            <li>
+              The system compares the current view against this calibration
+              image to detect cars.
+            </li>
+          </ul>
+        </div>
+
+        <!-- Configuration -->
+        <div class="guide-card">
+          <div class="card-header">
+            <i class="ph-bold ph-gear"></i> Settings & Pricing
+          </div>
+          <ul class="step-list">
+            <li>
+              Go to <span class="highlight">Settings</span> to adjust billing
+              rates.
+            </li>
+            <li>
+              <strong>Base Rate:</strong> The initial fee charged upon exit.
+            </li>
+            <li>
+              <strong>Grace Period:</strong> Time allowed before hourly charges
+              apply.
+            </li>
+            <li>
+              <strong>Hourly Rate:</strong> Added for every hour exceeded after
+              the grace period.
+            </li>
+          </ul>
+        </div>
+
+        <!-- Data Management -->
+        <div class="guide-card">
+          <div class="card-header">
+            <i class="ph-bold ph-database"></i> Data Management
+          </div>
+          <ul class="step-list">
+            <li>
+              Click <span class="highlight">Export Layout</span> to save your
+              drawn map to a JSON file.
+            </li>
+            <li>
+              Use <span class="highlight">Import Layout</span> to restore a
+              previously saved map.
+            </li>
+            <li>
+              <strong>Analytics:</strong> View revenue charts and occupancy
+              trends in the Analytics dashboard.
+            </li>
+            <li>All transaction history is saved locally in your browser.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

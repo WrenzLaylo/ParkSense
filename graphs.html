@@ -3,12 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ParkSense Analytics</title>
-
+    <title>LocaPark AI | Analytics Suite</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -16,28 +15,48 @@
 
     <style>
       :root {
-        --bg-body: #0f172a;
-        --bg-card: #1e293b;
-        --text-main: #f8fafc;
-        --text-muted: #94a3b8;
-        --primary: #3b82f6;
+        /* Theme Consistency */
+        --bg-body: #030712;
+        --bg-card: rgba(17, 24, 39, 0.7);
+        --bg-glass: rgba(31, 41, 55, 0.4);
+        --primary: #06b6d4;
+        --accent: #6366f1;
         --success: #10b981;
-        --border: #334155;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --text-main: #f9fafb;
+        --text-muted: #94a3b8;
+        --border: rgba(255, 255, 255, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       body {
         font-family: "Inter", sans-serif;
         background-color: var(--bg-body);
+        background-image: radial-gradient(
+            circle at 15% 50%,
+            rgba(6, 182, 212, 0.08),
+            transparent 25%
+          ),
+          radial-gradient(
+            circle at 85% 30%,
+            rgba(99, 102, 241, 0.08),
+            transparent 25%
+          );
         color: var(--text-main);
         margin: 0;
-        padding: 40px;
+        padding: 0;
         min-height: 100vh;
-        box-sizing: border-box;
       }
 
+      /* Layout */
       .container {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
+        padding: 40px 20px;
       }
 
       /* Header */
@@ -45,97 +64,178 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border);
       }
 
       .brand {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         font-size: 1.5rem;
         font-weight: 700;
         color: var(--text-main);
       }
 
-      button.close-btn {
-        background: var(--bg-card);
+      .brand-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+      }
+
+      .close-btn {
+        background: rgba(255, 255, 255, 0.05);
         border: 1px solid var(--border);
-        color: var(--text-main);
+        color: var(--text-muted);
         padding: 10px 20px;
         border-radius: 8px;
         cursor: pointer;
+        font-weight: 600;
         display: flex;
         align-items: center;
         gap: 8px;
-        font-weight: 600;
-        transition: 0.2s;
+        transition: all 0.2s;
+      }
+      .close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-main);
       }
 
-      button.close-btn:hover {
-        background: var(--border);
-      }
-
-      /* KPI Cards */
+      /* KPI Grid */
       .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: repeat(4, 1fr);
         gap: 20px;
         margin-bottom: 30px;
       }
 
       .kpi-card {
         background: var(--bg-card);
+        backdrop-filter: blur(12px);
         border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
+        border-radius: 16px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s;
+      }
+      .kpi-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255, 255, 255, 0.15);
       }
 
-      .kpi-title {
+      .kpi-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: var(--primary);
+      }
+      .kpi-card:nth-child(2)::before {
+        background: var(--success);
+      }
+      .kpi-card:nth-child(3)::before {
+        background: var(--warning);
+      }
+      .kpi-card:nth-child(4)::before {
+        background: var(--accent);
+      }
+
+      .kpi-label {
         color: var(--text-muted);
         font-size: 0.85rem;
         text-transform: uppercase;
-        font-weight: 600;
-        margin-bottom: 10px;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
         display: flex;
         align-items: center;
         gap: 8px;
       }
-
       .kpi-value {
+        font-family: "JetBrains Mono", monospace;
         font-size: 2rem;
         font-weight: 700;
         color: var(--text-main);
       }
+      .kpi-sub {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 5px;
+      }
 
-      /* Chart Grid */
-      .charts-grid {
+      /* Charts Layout */
+      .charts-section {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        grid-template-columns: repeat(12, 1fr);
         gap: 20px;
       }
 
       .chart-card {
         background: var(--bg-card);
         border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 20px;
-        min-height: 350px;
+        border-radius: 16px;
+        padding: 24px;
+        backdrop-filter: blur(12px);
       }
 
-      h3.chart-title {
-        margin: 0 0 20px 0;
-        font-size: 1.1rem;
+      .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .chart-title {
+        margin: 0;
+        font-size: 1rem;
         font-weight: 600;
+        color: var(--text-main);
       }
 
-      @media (max-width: 768px) {
-        .charts-grid {
-          grid-template-columns: 1fr;
+      /* Grid Spans */
+      .col-span-8 {
+        grid-column: span 8;
+      }
+      .col-span-4 {
+        grid-column: span 4;
+      }
+      .col-span-6 {
+        grid-column: span 6;
+      }
+      .col-span-12 {
+        grid-column: span 12;
+      }
+
+      canvas {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 300px;
+      }
+      .large-chart canvas {
+        max-height: 400px;
+      }
+
+      @media (max-width: 1024px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, 1fr);
         }
-        body {
-          padding: 20px;
+        .col-span-8,
+        .col-span-4,
+        .col-span-6 {
+          grid-column: span 12;
+        }
+      }
+      @media (max-width: 600px) {
+        .kpi-grid {
+          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -144,159 +244,378 @@
     <div class="container">
       <div class="header">
         <div class="brand">
-          <i
-            class="ph-fill ph-chart-pie-slice"
-            style="color: var(--primary)"
-          ></i>
-          Analytics Dashboard
+          <div class="brand-icon"><i class="ph-bold ph-chart-polar"></i></div>
+          <div>
+            Loca<span style="color: var(--primary)">Park</span>
+            <div
+              style="
+                font-size: 0.8rem;
+                font-weight: 400;
+                color: var(--text-muted);
+              "
+            >
+              Intelligence & Analytics Suite
+            </div>
+          </div>
         </div>
-        <button class="close-btn" onclick="window.close()">
-          <i class="ph ph-x"></i> Close
+        <button class="close-btn" onclick="window.location.href='index.html'">
+          <i class="ph-bold ph-arrow-u-up-left"></i> Return
         </button>
       </div>
 
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-title">
-            <i class="ph ph-currency-dollar"></i> Total Revenue
+          <div class="kpi-label">
+            <i class="ph-bold ph-currency-dollar"></i> Total Revenue
           </div>
-          <div class="kpi-value">₱<span id="kpi-revenue">0</span></div>
+          <div class="kpi-value">₱<span id="kpi-revenue">0.00</span></div>
+          <div class="kpi-sub">Gross earnings to date</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-title">
-            <i class="ph ph-car"></i> Vehicles Processed
+          <div class="kpi-label">
+            <i class="ph-bold ph-car"></i> Total Vehicles
           </div>
-          <div class="kpi-value" id="kpi-count">0</div>
+          <div class="kpi-value" id="kpi-volume">0</div>
+          <div class="kpi-sub">Successful transactions</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-title">
-            <i class="ph ph-star"></i> Most Popular Slot
+          <div class="kpi-label">
+            <i class="ph-bold ph-clock"></i> Peak Hour
           </div>
-          <div class="kpi-value" id="kpi-slot">-</div>
+          <div class="kpi-value" id="kpi-peak">-</div>
+          <div class="kpi-sub">Busiest time of day</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">
+            <i class="ph-bold ph-timer"></i> Avg Duration
+          </div>
+          <div class="kpi-value" id="kpi-duration">-</div>
+          <div class="kpi-sub">Minutes per stay</div>
         </div>
       </div>
 
-      <div class="charts-grid">
-        <div class="chart-card">
-          <h3 class="chart-title">Revenue Trends</h3>
+      <div class="charts-section">
+        <div class="chart-card col-span-8 large-chart">
+          <div class="chart-header">
+            <h3 class="chart-title">Revenue Trajectory (Hourly)</h3>
+            <i class="ph-fill ph-trend-up" style="color: var(--success)"></i>
+          </div>
           <canvas id="revenueChart"></canvas>
         </div>
-        <div class="chart-card">
-          <h3 class="chart-title">Slot Occupancy Frequency</h3>
-          <canvas id="occupancyChart"></canvas>
+
+        <div class="chart-card col-span-4">
+          <div class="chart-header">
+            <h3 class="chart-title">Stay Duration</h3>
+            <i class="ph-fill ph-hourglass"></i>
+          </div>
+          <canvas id="durationChart"></canvas>
+        </div>
+
+        <div class="chart-card col-span-6">
+          <div class="chart-header">
+            <h3 class="chart-title">Peak Activity Hours</h3>
+            <i class="ph-fill ph-clock-afternoon"></i>
+          </div>
+          <canvas id="peakChart"></canvas>
+        </div>
+
+        <div class="chart-card col-span-6">
+          <div class="chart-header">
+            <h3 class="chart-title">Slot Usage Heatmap</h3>
+            <i class="ph-fill ph-squares-four"></i>
+          </div>
+          <canvas id="slotChart"></canvas>
+        </div>
+
+        <div
+          class="chart-card col-span-12"
+          style="
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+          "
+        >
+          <div class="chart-header" style="width: 100%">
+            <h3 class="chart-title">Weekly Traffic Pattern</h3>
+            <i class="ph-fill ph-calendar-check"></i>
+          </div>
+          <div style="width: 50%; height: 100%">
+            <canvas id="weeklyChart"></canvas>
+          </div>
         </div>
       </div>
     </div>
 
     <script>
-      // --- 1. Global Chart Settings for Dark Mode ---
+      // --- Config: Dark Mode Chart Defaults ---
       Chart.defaults.color = "#94a3b8";
-      Chart.defaults.borderColor = "#334155";
+      Chart.defaults.borderColor = "rgba(255, 255, 255, 0.05)";
       Chart.defaults.font.family = "Inter";
 
-      // --- 2. Data Retrieval ---
-      const historyData = JSON.parse(localStorage.getItem("allHistory")) || [];
-      const revenueData = JSON.parse(localStorage.getItem("allRevenue")) || [];
+      // --- Helper Functions ---
+      const getHour = (isoDate) => new Date(isoDate).getHours();
+      const getDay = (isoDate) => new Date(isoDate).getDay(); // 0 = Sun
 
-      // --- 3. Calculate KPIs ---
-      const totalRev = revenueData.reduce(
-        (acc, curr) => acc + parseFloat(curr.payment),
-        0
-      );
-      document.getElementById("kpi-revenue").innerText = totalRev.toFixed(2);
-      document.getElementById("kpi-count").innerText = historyData.length;
+      // --- Main Data Loading Function ---
+      async function initDashboard() {
+        try {
+          // 1. FETCH DATA FROM PHP
+          const response = await fetch("get_history.php");
+          const rawHistory = await response.json();
 
-      // Calculate Most Popular Slot
-      const slotCounts = {};
-      historyData.forEach((h) => {
-        slotCounts[h.slot] = (slotCounts[h.slot] || 0) + 1;
-      });
+          if (!Array.isArray(rawHistory) || rawHistory.length === 0) {
+            console.warn("No data found in database.");
+            return;
+          }
 
-      // Find key with max value
-      let maxSlot = "-";
-      let maxVal = 0;
-      for (const [slot, count] of Object.entries(slotCounts)) {
-        if (count > maxVal) {
-          maxVal = count;
-          maxSlot = slot;
+          // --- 2. Process Data (KPIs) ---
+
+          // KPI: Total Revenue
+          const totalRevenue = rawHistory.reduce(
+            (sum, item) => sum + parseFloat(item.payment || 0),
+            0
+          );
+
+          // KPI: Volume
+          const totalVolume = rawHistory.length;
+
+          // KPI: Avg Duration
+          const avgDurationSec =
+            rawHistory.reduce(
+              (sum, item) => sum + (parseInt(item.duration_sec) || 0),
+              0
+            ) / (totalVolume || 1);
+          const avgDurationMin = Math.round(avgDurationSec / 60);
+
+          // KPI: Peak Hour
+          const hourCounts = new Array(24).fill(0);
+          rawHistory.forEach((item) => {
+            const d = new Date(item.entry_time || item.entry);
+            if (!isNaN(d)) hourCounts[d.getHours()]++;
+          });
+          const maxHourVal = Math.max(...hourCounts);
+          const peakHourIdx = hourCounts.indexOf(maxHourVal);
+          const peakHourStr = `${peakHourIdx}:00 - ${peakHourIdx + 1}:00`;
+
+          // Update DOM KPIs
+          document.getElementById("kpi-revenue").innerText =
+            totalRevenue.toFixed(2);
+          document.getElementById("kpi-volume").innerText = totalVolume;
+          document.getElementById("kpi-peak").innerText =
+            totalVolume > 0 ? peakHourStr : "-";
+          document.getElementById("kpi-duration").innerText =
+            totalVolume > 0 ? `${avgDurationMin} min` : "-";
+
+          // --- 3. Prepare Chart Data ---
+
+          // A. Revenue Over Time (Group by HOUR - Chronological)
+          const revByHour = {};
+
+          rawHistory.forEach((item) => {
+            const d = new Date(item.entry_time || item.entry);
+            // Round down to the nearest hour (set minutes/seconds/ms to 0)
+            d.setMinutes(0, 0, 0);
+            const timeKey = d.getTime(); // Use numeric timestamp for sorting
+
+            revByHour[timeKey] =
+              (revByHour[timeKey] || 0) + parseFloat(item.payment || 0);
+          });
+
+          // Sort timestamps chronologically
+          const sortedTimeKeys = Object.keys(revByHour)
+            .map((k) => parseInt(k)) // Convert keys back to numbers
+            .sort((a, b) => a - b);
+
+          // Generate Labels (Readable Date + Hour)
+          const sortedDateLabels = sortedTimeKeys.map((ts) => {
+            return new Date(ts).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+            });
+          });
+
+          // Generate Data corresponding to the sorted labels
+          const sortedRevValues = sortedTimeKeys.map((k) => revByHour[k]);
+
+          // B. Slot Popularity
+          const slotCounts = {};
+          rawHistory.forEach((item) => {
+            slotCounts[item.slot] = (slotCounts[item.slot] || 0) + 1;
+          });
+
+          // C. Duration Buckets
+          let shortTerm = 0; // < 1 hr
+          let mediumTerm = 0; // 1 - 3 hrs
+          let longTerm = 0; // > 3 hrs
+
+          rawHistory.forEach((item) => {
+            const sec = parseInt(item.duration_sec) || 0;
+            if (sec < 3600) shortTerm++;
+            else if (sec < 10800) mediumTerm++;
+            else longTerm++;
+          });
+
+          // D. Weekly Pattern
+          const dayCounts = new Array(7).fill(0);
+          rawHistory.forEach((item) => {
+            const d = new Date(item.entry_time || item.entry);
+            if (!isNaN(d)) dayCounts[d.getDay()]++;
+          });
+
+          // --- 4. Render Charts ---
+
+          // 1. Revenue Chart (Hourly)
+          const ctxRev = document
+            .getElementById("revenueChart")
+            .getContext("2d");
+          const gradRev = ctxRev.createLinearGradient(0, 0, 0, 400);
+          gradRev.addColorStop(0, "rgba(6, 182, 212, 0.5)");
+          gradRev.addColorStop(1, "rgba(6, 182, 212, 0)");
+
+          new Chart(ctxRev, {
+            type: "line",
+            data: {
+              labels: sortedDateLabels, // Uses "Nov 24, 10 AM" format
+              datasets: [
+                {
+                  label: "Hourly Revenue (₱)",
+                  data: sortedRevValues,
+                  borderColor: "#06b6d4",
+                  backgroundColor: gradRev,
+                  fill: true,
+                  tension: 0.4,
+                  pointBackgroundColor: "#030712",
+                  pointBorderColor: "#06b6d4",
+                  pointBorderWidth: 2,
+                  pointRadius: 4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: { color: "rgba(255,255,255,0.05)" },
+                },
+              },
+            },
+          });
+
+          // 2. Duration Chart
+          new Chart(document.getElementById("durationChart"), {
+            type: "doughnut",
+            data: {
+              labels: ["Short (<1h)", "Medium (1-3h)", "Long (>3h)"],
+              datasets: [
+                {
+                  data: [shortTerm, mediumTerm, longTerm],
+                  backgroundColor: ["#10b981", "#f59e0b", "#ef4444"],
+                  borderWidth: 0,
+                  hoverOffset: 10,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: "bottom",
+                  labels: { padding: 20, usePointStyle: true },
+                },
+              },
+              cutout: "70%",
+            },
+          });
+
+          // 3. Peak Hours
+          new Chart(document.getElementById("peakChart"), {
+            type: "bar",
+            data: {
+              labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+              datasets: [
+                {
+                  label: "Vehicles",
+                  data: hourCounts,
+                  backgroundColor: "#6366f1",
+                  borderRadius: 4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: { x: { grid: { display: false } } },
+            },
+          });
+
+          // 4. Slot Popularity
+          new Chart(document.getElementById("slotChart"), {
+            type: "bar",
+            indexAxis: "y",
+            data: {
+              labels: Object.keys(slotCounts),
+              datasets: [
+                {
+                  label: "Frequency",
+                  data: Object.values(slotCounts),
+                  backgroundColor: "rgba(245, 158, 11, 0.8)",
+                  borderRadius: 4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+            },
+          });
+
+          // 5. Weekly Pattern
+          new Chart(document.getElementById("weeklyChart"), {
+            type: "radar",
+            data: {
+              labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+              datasets: [
+                {
+                  label: "Traffic Volume",
+                  data: dayCounts,
+                  borderColor: "#ec4899",
+                  backgroundColor: "rgba(236, 72, 153, 0.2)",
+                  pointBackgroundColor: "#ec4899",
+                  pointBorderColor: "#fff",
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                r: {
+                  angleLines: { color: "rgba(255,255,255,0.1)" },
+                  grid: { color: "rgba(255,255,255,0.1)" },
+                  pointLabels: { color: "#9ca3af", font: { size: 12 } },
+                  ticks: { display: false, backdropColor: "transparent" },
+                },
+              },
+              plugins: { legend: { display: false } },
+            },
+          });
+        } catch (err) {
+          console.error("Error fetching analytics:", err);
+          // alert("Could not load data from database.");
         }
       }
-      document.getElementById("kpi-slot").innerText = maxSlot;
 
-      // --- 4. Revenue Chart (Line with Gradient) ---
-      const ctxRevenue = document
-        .getElementById("revenueChart")
-        .getContext("2d");
-
-      // Create gradient
-      const gradient = ctxRevenue.createLinearGradient(0, 0, 0, 400);
-      gradient.addColorStop(0, "rgba(16, 185, 129, 0.5)"); // Green top
-      gradient.addColorStop(1, "rgba(16, 185, 129, 0.0)"); // Transparent bottom
-
-      // Prepare Data (Group by timestamp to clean up X-axis if needed, or just map)
-      const revLabels = historyData.map((h) => h.exit.split(" ")[0]); // Just taking time part for brevity if needed
-      const revValues = historyData.map((h) => h.payment);
-
-      new Chart(ctxRevenue, {
-        type: "line",
-        data: {
-          labels: revLabels,
-          datasets: [
-            {
-              label: "Revenue (₱)",
-              data: revValues,
-              borderColor: "#10b981",
-              backgroundColor: gradient,
-              fill: true,
-              tension: 0.4,
-              pointBackgroundColor: "#10b981",
-              pointBorderColor: "#fff",
-              pointRadius: 4,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-          },
-          scales: {
-            y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
-            x: { grid: { display: false } },
-          },
-        },
-      });
-
-      // --- 5. Occupancy Chart (Bar) ---
-      const ctxOccupancy = document
-        .getElementById("occupancyChart")
-        .getContext("2d");
-
-      new Chart(ctxOccupancy, {
-        type: "bar",
-        data: {
-          labels: Object.keys(slotCounts),
-          datasets: [
-            {
-              label: "Times Occupied",
-              data: Object.values(slotCounts),
-              backgroundColor: "#3b82f6",
-              borderRadius: 6,
-              barThickness: 40,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-          },
-          scales: {
-            y: { beginAtZero: true, ticks: { stepSize: 1 } },
-            x: { grid: { display: false } },
-          },
-        },
-      });
+      // Start the dashboard
+      initDashboard();
     </script>
   </body>
 </html>

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Spot Reservation - LocaPark</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1f2937;
+        }
+
+        :root {
+            --primary-color: #1a4f8d; /* Deep Campus Blue */
+            --accent-color: #059669; /* Emerald Green */
+            --spot-available: #4ade80; /* Light Green */
+            --spot-reserved: #dc2626; /* Dark Red */
+            --spot-selected: #fcd34d; /* Bright Yellow */
+            --lot-background: #4b5563; /* Dark Gray Asphalt */
+            --marking-color: #ffffff; /* White Lines */
+        }
+
+        .text-primary { color: var(--primary-color); }
+        .text-accent { color: var(--accent-color); }
+
+        /* --- Parking Spot Visualization Styles --- */
+
+        .parking-lot-grid {
+            /* Create 3 columns: spot-row | lane | spot-row */
+            display: grid;
+            grid-template-columns: 1fr 60px 1fr; 
+            gap: 0;
+            background-color: var(--lot-background);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .parking-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1px; /* Gap between spots */
+        }
+        
+        .parking-spot-container {
+            position: relative;
+            height: 120px; /* Height of a single spot slot */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 0;
+        }
+
+        /* Parking Lines (Static White Borders) */
+        .parking-spot-container::before, 
+        .parking-spot-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 5px; /* Line thickness */
+            background-color: var(--marking-color);
+            border-radius: 2px;
+        }
+
+        .parking-spot-container::before { left: 0; }
+        .parking-spot-container::after { right: 0; }
+
+        /* Actual Spot Element */
+        .parking-spot {
+            width: 85%;
+            height: 85%;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column; /* Keep text column for spot ID */
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
+            color: #fff; /* Default text color for spots */
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            font-size: 0.8rem;
+            position: relative; /* For car positioning */
+            overflow: hidden; /* Ensure car doesn't spill out */
+        }
+
+        /* Lane/Divider Area */
+        .central-lane {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0;
+        }
+        
+        /* Lane markings (Dashed Yellow Line) */
+        .central-lane-mark {
+            width: 10px;
+            height: 15px;
+            background-color: #fcd34d;
+            border-radius: 1px;
+        }
+
+        /* Status Styles */
+        .spot-available {
+            background-color: var(--spot-available);
+            cursor: pointer;
+        }
+        .spot-available:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.8);
+        }
+
+        .spot-reserved {
+            background-color: var(--spot-reserved);
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
+        
+        /* New: Cartoon Car SVG for Reserved Spots */
+        .spot-reserved .car-svg-wrapper {
+            position: absolute;
+            width: 90%; /* Adjust size to fit horizontally */
+            height: 60%; /* Adjust height */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Center the wrapper */
+            z-index: 1; /* Ensure car is above spot text */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spot-reserved .car-svg {
+            width: 100%;
+            height: 100%;
+            fill: #ffffff; /* Car body color */
+            filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.3)); /* Subtle shadow */
+        }
+
+        .spot-reserved .car-svg .window { fill: #e0f2f7; /* Window color */ }
+        .spot-reserved .car-svg .tire { fill: #333333; /* Tire color */ }
+        .spot-reserved .car-svg .headlight { fill: #ffe100; }
+        .spot-reserved .car-svg .taillight { fill: #cc0000; }
+
+        /* Hide spot ID text when car is present */
+        .spot-reserved span {
+            display: none;
+        }
+
+
+        .spot-selected {
+            background-color: var(--spot-selected);
+            color: var(--primary-color);
+            box-shadow: 0 0 20px var(--spot-selected);
+            transform: scale(1.05);
+            font-weight: 800;
+        }
+        
+        /* --- Form Button Fix --- */
+        .text-black { color: #000; } 
+        
+    </style>
+</head>
+<body>
+    <header class="sticky top-0 z-50 bg-white shadow-lg">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-5 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <svg class="w-9 h-9 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <span class="text-3xl font-extrabold text-primary tracking-wide">Loca<span class="text-accent">Park</span></span>
+            </div>
+            <a href="home.html" class="text-gray-700 px-5 py-2 rounded-full font-semibold border-2 border-primary hover:bg-primary hover:text-black transition duration-300">
+                &larr; Back to Lot Status
+            </a>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="max-w-7xl mx-auto">
+            
+            <h1 class="text-5xl font-extrabold mb-3 text-primary" id="lot-title">
+                Loading Lot Details...
+            </h1>
+            <p class="text-xl text-gray-600 mb-10">
+                Tap on any **Available** spot to select it and proceed to the reservation form below.
+            </p>
+
+            <div class="grid grid-cols-12 gap-10">
+                
+                <div class="col-span-12 lg:col-span-8 bg-white p-6 md:p-10 rounded-3xl shadow-2xl border-2 border-gray-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-primary flex items-center">
+                            <svg class="w-8 h-8 mr-3 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 01.553-.894L9 2m0 18l6-3m-6 3V2m9 16l-.053-.027A1 1 0 0015 16.382V5.618a1 1 0 01.553-.894L21 2m-3 18l3-1.5m-3 0V5.618m0 10.764v-1.5"></path></svg>
+                            Lot Spot Map (<span id="lot-type-label">Type</span>)
+                        </h2>
+                        <div class="flex space-x-4 text-sm font-medium text-gray-700">
+                            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-green-500 mr-2 border border-green-700"></span>Available</div>
+                            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-red-500 mr-2 border border-red-700"></span>Reserved</div>
+                            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-yellow-500 mr-2 border border-yellow-700"></span>Selected</div>
+                        </div>
+                    </div>
+                    
+                    <div id="parking-map" class="parking-lot-grid max-h-[80vh] overflow-y-auto">
+                        </div>
+                </div>
+
+                <div class="col-span-12 lg:col-span-4">
+                    <div class="sticky top-28 bg-white p-8 rounded-3xl shadow-2xl border-2 border-primary">
+                        <h2 class="text-3xl font-bold mb-6 text-primary">
+                            Finalize Reservation
+                        </h2>
+                        
+                        <div class="space-y-4 mb-8 p-4 bg-gray-100 rounded-xl border border-gray-300">
+                            <p class="text-sm font-semibold text-gray-700">Lot:</p>
+                            <p class="text-2xl font-extrabold text-accent" id="selected-lot-name-form">--</p>
+
+                            <p class="text-sm font-semibold text-gray-700">Selected Spot:</p>
+                            <p class="text-4xl font-extrabold text-primary" id="selected-spot-id-form">--</p>
+                        </div>
+                        
+                        <form onsubmit="handleFinalReservation(event)">
+                             <div class="mb-5">
+                                <label for="reservationDate" class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                                <input type="date" id="reservationDate" required class="w-full p-3 border border-gray-300 rounded-xl focus:ring-accent focus:border-accent transition duration-150 shadow-sm">
+                            </div>
+                            <div class="mb-5">
+                                <label for="reservationTime" class="block text-sm font-semibold text-gray-700 mb-2">Estimated Arrival Time</label>
+                                <input type="time" id="reservationTime" required class="w-full p-3 border border-gray-300 rounded-xl focus:ring-accent focus:border-accent transition duration-150 shadow-sm">
+                            </div>
+                            <div class="mb-8">
+                                <label for="licensePlate" class="block text-sm font-semibold text-gray-700 mb-2">License Plate Number</label>
+                                <input type="text" id="licensePlate" placeholder="LPR Tag (e.g., ABC 123)" required class="w-full p-3 border border-gray-300 rounded-xl focus:ring-accent focus:border-accent transition duration-150 shadow-sm">
+                            </div>
+
+                            <button type="submit" id="reserve-button" class="w-full bg-accent text-black px-8 py-4 rounded-full font-bold text-xl hover:bg-opacity-90 transition duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                Confirm Spot Reservation
+                            </button>
+                        </form>
+                        
+                        <div id="reservation-message" class="mt-8 p-4 rounded-xl hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+    
+    <script>
+        // 1. Mock Data Structure (Simulated Real-Time Data)
+        const MOCK_LOT_DATA = {
+            lotA: { 
+                name: 'Lot A - Student Parking', 
+                type: 'Student',
+                totalSpots: 50, 
+                // Generate 50 spots: 35 available, 15 reserved
+                spots: Array(50).fill(0).map((_, i) => ({ 
+                    id: `A-${(i + 1).toString().padStart(2, '0')}`, 
+                    status: (i % 3 === 0 || i % 7 === 0) ? 'reserved' : 'available',
+                    occupant: null
+                }))
+            },
+            lotB: { 
+                name: 'Lot B - Faculty/Admin', 
+                type: 'Faculty',
+                totalSpots: 30, 
+                // Generate 30 spots: 10 available, 20 reserved
+                spots: Array(30).fill(0).map((_, i) => ({ 
+                    id: `B-${(i + 1).toString().padStart(2, '0')}`, 
+                    status: i < 10 ? 'available' : 'reserved',
+                    occupant: null
+                }))
+            },
+            lotC: { 
+                name: 'Lot C - Visitor Center', 
+                type: 'Visitor',
+                totalSpots: 40, 
+                // Generate 40 spots: 5 available, 35 reserved
+                spots: Array(40).fill(0).map((_, i) => ({ 
+                    id: `C-${(i + 1).toString().padStart(2, '0')}`, 
+                    status: i < 5 ? 'available' : 'reserved',
+                    occupant: null
+                }))
+            }
+        };
+
+        let currentLotId = null;
+        let selectedSpotId = null;
+
+        // SVG for a cartoon car (horizontal top-down view)
+        const CAR_SVG = `
+            <svg class="car-svg" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+                <rect x="10" y="15" width="180" height="70" rx="15" ry="15" fill="currentColor"/>
+                
+                <rect x="50" y="25" width="80" height="50" rx="8" ry="8" class="window"/>
+                
+                <rect x="55" y="28" width="25" height="44" rx="5" ry="5" fill="#e0f2f7"/>
+                <rect x="100" y="28" width="25" height="44" rx="5" ry="5" fill="#e0f2f7"/>
+
+                <circle cx="25" cy="25" r="7" class="taillight"/>
+                <circle cx="25" cy="75" r="7" class="taillight"/>
+                
+                <circle cx="175" cy="25" r="7" class="headlight"/>
+                <circle cx="175" cy="75" r="7" class="headlight"/>
+
+                <rect x="25" y="5" width="30" height="15" rx="5" ry="5" class="tire"/>
+                <rect x="25" y="80" width="30" height="15" rx="5" ry="5" class="tire"/>
+                <rect x="145" y="5" width="30" height="15" rx="5" ry="5" class="tire"/>
+                <rect x="145" y="80" width="30" height="15" rx="5" ry="5" class="tire"/>
+            </svg>
+        `;
+
+
+        /**
+         * Initializes the spot map based on the lot ID from the URL.
+         * @param {string} lotId The ID of the lot to display.
+         */
+        function initializeMap(lotId) {
+            currentLotId = lotId;
+            const lot = MOCK_LOT_DATA[lotId];
+
+            if (!lot) {
+                document.getElementById('lot-title').textContent = 'Error: Invalid Parking Lot Selected';
+                return;
+            }
+
+            document.getElementById('lot-title').textContent = `${lot.name}`;
+            document.getElementById('lot-type-label').textContent = `${lot.type}`;
+            document.getElementById('selected-lot-name-form').textContent = lot.name;
+            
+            renderParkingMap(lot);
+        }
+
+        /**
+         * Renders the interactive parking map for the selected lot using the custom aesthetic.
+         * @param {object} lot The lot data object.
+         */
+        function renderParkingMap(lot) {
+            const mapContainer = document.getElementById('parking-map');
+            mapContainer.innerHTML = '';
+            
+            const spots = lot.spots;
+            // Distribute spots evenly into two columns, rounding up for the first column
+            const spotsPerColumn = Math.ceil(spots.length / 2);
+
+            const col1 = document.createElement('div');
+            col1.className = 'parking-column';
+            const col2 = document.createElement('div');
+            col2.className = 'parking-column';
+            const lane = document.createElement('div');
+            lane.className = 'central-lane';
+
+            // Add lane markings for visual divider
+            for (let i = 0; i < spotsPerColumn; i++) {
+                const mark = document.createElement('div');
+                mark.className = 'central-lane-mark';
+                lane.appendChild(mark);
+            }
+
+            // Populate columns
+            for (let i = 0; i < spots.length; i++) {
+                const spot = spots[i];
+                const spotContainer = document.createElement('div');
+                spotContainer.className = 'parking-spot-container';
+
+                const spotDiv = document.createElement('div');
+                spotDiv.id = `spot-${spot.id}`;
+                spotDiv.textContent = spot.id;
+                
+                let spotClass = `spot-${spot.status}`;
+                if (spot.id === selectedSpotId) {
+                    spotClass = 'spot-selected';
+                }
+
+                spotDiv.className = `parking-spot ${spotClass}`;
+
+                if (spot.status === 'available') {
+                    spotDiv.onclick = () => selectSpot(spot.id);
+                } else {
+                    spotDiv.title = 'Occupied - Cannot Reserve';
+                    // Create a wrapper for the SVG to allow for more precise control over rotation and scaling
+                    const carWrapper = document.createElement('div');
+                    carWrapper.className = 'car-svg-wrapper';
+
+                    let carSVGToInject = CAR_SVG;
+
+                    // Rotate cars in the left column to face right (towards the lane)
+                    // Cars in the right column already face left by default of the SVG
+                    if (i < spotsPerColumn) { 
+                        // Left column cars: rotate 180 degrees
+                        carWrapper.style.transform = 'translate(-50%, -50%) rotate(180deg)';
+                    }
+                    
+                    carWrapper.innerHTML = carSVGToInject;
+                    spotDiv.appendChild(carWrapper);
+                    
+                }
+                
+                spotContainer.appendChild(spotDiv);
+                
+                // Distribute spots to left and right columns
+                if (i < spotsPerColumn) {
+                    col1.appendChild(spotContainer);
+                } else {
+                    // For the second column, reverse the lines for visual consistency
+                    spotContainer.classList.add('flex-row-reverse');
+                    col2.appendChild(spotContainer);
+                }
+            }
+
+            mapContainer.appendChild(col1);
+            mapContainer.appendChild(lane);
+            mapContainer.appendChild(col2);
+        }
+
+        /**
+         * Handles the click event on a parking spot.
+         * @param {string} spotId The ID of the clicked spot.
+         */
+        function selectSpot(spotId) {
+            const lot = MOCK_LOT_DATA[currentLotId];
+            
+            // 1. Deselect previous spot visually and logically
+            const prevSelected = document.getElementById(`spot-${selectedSpotId}`);
+            if (prevSelected) {
+                // Determine previous spot's actual status (available or reserved)
+                const prevSpot = lot.spots.find(s => s.id === selectedSpotId);
+                prevSelected.classList.remove('spot-selected');
+                prevSelected.classList.add(`spot-${prevSpot.status}`);
+                 // Re-add car if it was a reserved spot
+                if (prevSpot.status === 'reserved') {
+                    // Restore text and re-add car SVG if needed (re-render handles this best)
+                }
+            }
+
+            // 2. Handle new selection/deselection
+            if (selectedSpotId === spotId) {
+                // Deselecting the spot
+                selectedSpotId = null;
+            } else {
+                // Selecting a new spot
+                const newSelected = document.getElementById(`spot-${spotId}`);
+                newSelected.classList.remove('spot-available');
+                newSelected.classList.add('spot-selected');
+                selectedSpotId = spotId;
+            }
+
+            // 3. Update form fields and button state
+            document.getElementById('selected-spot-id-form').textContent = selectedSpotId || '--';
+            document.getElementById('reserve-button').disabled = !selectedSpotId;
+            document.getElementById('reservation-message').classList.add('hidden');
+        }
+
+        /**
+         * Handles the final reservation form submission.
+         * @param {Event} event The form submission event.
+         */
+        function handleFinalReservation(event) {
+            event.preventDefault();
+
+            const lot = MOCK_LOT_DATA[currentLotId];
+            const date = document.getElementById('reservationDate').value;
+            const time = document.getElementById('reservationTime').value;
+            const plate = document.getElementById('licensePlate').value;
+            const reserveButton = document.getElementById('reserve-button');
+
+            if (!selectedSpotId) {
+                showMessage("Please select an available parking spot first.", 'bg-red-50 border border-red-500 text-red-700');
+                return;
+            }
+            
+            if (!/^[A-Z0-9\s\-]{3,10}$/i.test(plate)) {
+                showMessage("Error: Please enter a valid license plate number (e.g., ABC 123).", 'bg-red-50 border border-red-500 text-red-700');
+                return;
+            }
+            
+            reserveButton.textContent = 'Processing...';
+            reserveButton.disabled = true;
+
+            setTimeout(() => {
+                // 1. Update the spot status in mock data
+                const spotIndex = lot.spots.findIndex(s => s.id === selectedSpotId);
+                const spot = lot.spots[spotIndex];
+                
+                if (spotIndex !== -1 && spot.status === 'available') {
+                    spot.status = 'reserved';
+                    spot.occupant = plate; // Assign occupant for simulation
+                } else {
+                     // Safety check, though spot-reserved spots should not be clickable
+                     showMessage(`Error: Spot ${selectedSpotId} is no longer available. Please select another.`, 'bg-red-50 border border-red-500 text-red-700');
+                     reserveButton.textContent = 'Confirm Spot Reservation';
+                     reserveButton.disabled = false;
+                     return;
+                }
+                
+                // 2. Clear selection and re-render map
+                const reservedSpotId = selectedSpotId;
+                selectedSpotId = null;
+                renderParkingMap(lot); // Re-render map to show the spot is now reserved
+
+                // 3. Display success message
+                const confirmationCode = Math.random().toString(36).substring(2, 9).toUpperCase();
+                const successHTML = `
+                    <h4 class="text-2xl font-bold mb-2 text-green-700">Reservation Successful! 🎉</h4>
+                    <p class="text-lg">Spot **${reservedSpotId}** in **${lot.name}** is secured.</p>
+                    <div class="mt-4 p-3 rounded-lg bg-green-200 shadow-md">
+                        <p class="text-sm font-semibold text-green-800">Pass Code:</p>
+                        <p class="font-mono text-xl font-extrabold text-green-900">${confirmationCode}</p>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-700">Valid for: ${date} at ${time}. Plate: ${plate}.</p>
+                `;
+                showMessage(successHTML, 'bg-green-50 border-4 border-green-500');
+
+                // 4. Reset form/UI
+                document.getElementById('selected-spot-id-form').textContent = '--';
+                reserveButton.textContent = 'Confirm Spot Reservation';
+                document.getElementById('licensePlate').value = '';
+                
+            }, 1500); // Simulate network latency
+        }
+
+        /**
+         * Displays a temporary message in the reservation card.
+         */
+        function showMessage(htmlContent, className) {
+            const messageBox = document.getElementById('reservation-message');
+            messageBox.innerHTML = htmlContent;
+            messageBox.className = `mt-8 p-4 rounded-xl transition duration-500 ${className}`;
+            messageBox.classList.remove('hidden');
+        }
+
+        /**
+         * Initializes the page by reading query parameters and setting up data.
+         */
+        function init() {
+            // Set today as default date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('reservationDate').value = today;
+
+            // 1. Get lot ID from URL Query Parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            let lotParam = urlParams.get('lot');
+            
+            // Default to Lot A if no valid parameter is found
+            lotParam = (lotParam && MOCK_LOT_DATA[lotParam]) ? lotParam : 'lotA';
+            
+            initializeMap(lotParam);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

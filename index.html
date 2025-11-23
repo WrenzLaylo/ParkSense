@@ -3,286 +3,482 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ParkSense Dashboard - Synced Data</title>
+    <title>LocaPark AI | Video Command Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
       :root {
-        --bg-body: #0f172a;
-        --bg-card: #1e293b;
-        --bg-card-hover: #334155;
-        --text-main: #f8fafc;
-        --text-muted: #94a3b8;
-        --primary: #3b82f6;
-        --primary-hover: #2563eb;
-        --success: #10b981;
-        --danger: #ef4444;
-        --border: #334155;
-        --warning: #f59e0b;
+        /* --- Color Palette: Void & Neon --- */
+        --bg-body: #030712;
+        --bg-panel: rgba(17, 24, 39, 0.6);
+        --bg-glass: rgba(31, 41, 55, 0.4);
+        --bg-glass-hover: rgba(55, 65, 81, 0.5);
+
+        --primary: #06b6d4; /* Cyan 500 */
+        --primary-dim: rgba(6, 182, 212, 0.1);
+        --primary-glow: rgba(6, 182, 212, 0.5);
+
+        --accent: #6366f1; /* Indigo 500 */
+
+        --success: #10b981; /* Emerald 500 */
+        --success-dim: rgba(16, 185, 129, 0.1);
+        --success-glow: rgba(16, 185, 129, 0.4);
+
+        --danger: #ef4444; /* Red 500 */
+        --danger-dim: rgba(239, 68, 68, 0.1);
+
+        --warning: #f59e0b; /* Amber 500 */
+
+        --text-main: #f9fafb;
+        --text-muted: #9ca3af;
+        --text-dim: #4b5563;
+
+        --border: rgba(255, 255, 255, 0.08);
+        --border-highlight: rgba(255, 255, 255, 0.15);
+
+        --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
       }
 
       * {
         box-sizing: border-box;
+        scrollbar-width: thin;
+        scrollbar-color: var(--bg-glass-hover) transparent;
+      }
+
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--bg-glass-hover);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
       }
 
       body {
         font-family: "Inter", sans-serif;
         background-color: var(--bg-body);
+        /* Cyber grid background */
+        background-image: linear-gradient(var(--bg-body) 0%, transparent 100%),
+          radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-body) 60%),
+          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        background-position: center top;
         color: var(--text-main);
         margin: 0;
-        padding: 20px;
         height: 100vh;
         overflow: hidden;
-      }
-
-      /* Layout Grid */
-      .app-container {
-        display: grid;
-        grid-template-columns: 2fr 1.2fr;
-        gap: 20px;
-        height: calc(100vh - 40px);
-        max-width: 1600px;
-        margin: 0 auto;
-      }
-
-      /* Header */
-      .header {
-        grid-column: 1 / -1;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
+      }
+
+      /* --- Glass Component Utility --- */
+      .glass-panel {
+        background: var(--bg-panel);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      }
+
+      /* --- Sidebar --- */
+      .sidebar {
+        width: 260px;
+        height: 100%;
+        background: rgba(10, 10, 15, 0.8);
+        backdrop-filter: blur(20px);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        gap: 24px;
+        z-index: 100;
+        position: relative;
       }
 
       .brand {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 1.5rem;
+        gap: 12px;
+        font-size: 1.25rem;
         font-weight: 700;
-        color: var(--primary);
+        color: var(--text-main);
+        letter-spacing: -0.02em;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border);
       }
 
-      /* Left Column: Camera */
-      .camera-section {
+      .brand-icon-box {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        box-shadow: 0 0 15px var(--primary-glow);
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        background: rgba(16, 185, 129, 0.05);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--success);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--success);
+        border-radius: 50%;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulse-green 2s infinite;
+      }
+
+      /* --- Sidebar Sections --- */
+      .control-section {
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 10px;
+      }
+
+      .section-title {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-dim);
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      /* --- Buttons --- */
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        outline: none;
+        transition: all 0.2s var(--ease-out);
+      }
+
+      .nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+        text-align: left;
+        width: 100%;
+        text-decoration: none; /* For A tags */
+      }
+
+      .nav-btn:hover {
+        background: var(--bg-glass);
+        color: var(--text-main);
+        border-color: var(--border);
+      }
+
+      .nav-btn i {
+        font-size: 1.1rem;
+      }
+
+      /* Primary Action Button (Add Slot) */
+      .btn-primary {
+        background: linear-gradient(135deg, var(--primary), #0ea5e9);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+      }
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+      }
+
+      /* Active/Drawing State */
+      .nav-btn.active-mode {
+        background: var(--warning);
+        color: #000;
+        font-weight: 700;
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        animation: pulse-border 1.5s infinite;
+      }
+
+      /* --- Main Layout --- */
+      .app-container {
+        flex: 1;
+        padding: 20px;
+        display: grid;
+        grid-template-columns: 2.5fr 1.2fr;
+        grid-template-rows: 1fr auto;
+        gap: 20px;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* --- Feed Section (Top Left) --- */
+      .feed-container {
+        grid-column: 1 / 2;
+        grid-row: 1 / 2;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 0; /* Fix flex overflow */
       }
 
       .video-wrapper {
+        flex: 1;
         position: relative;
         background: #000;
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
         border: 1px solid var(--border);
-        aspect-ratio: 4/3;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        /* Corner decorations */
+        --corner-size: 15px;
+        --corner-color: var(--primary);
         display: flex;
         justify-content: center;
         align-items: center;
-        cursor: crosshair;
       }
 
-      video {
-        display: none;
+      /* Futuristic Corners for Video */
+      .video-wrapper::before,
+      .video-wrapper::after {
+        content: "";
+        position: absolute;
+        width: var(--corner-size);
+        height: var(--corner-size);
+        border: 2px solid var(--corner-color);
+        transition: all 0.3s ease;
+        z-index: 10;
+        pointer-events: none;
+      }
+      .video-wrapper::before {
+        top: 10px;
+        left: 10px;
+        border-right: none;
+        border-bottom: none;
+      }
+      .video-wrapper::after {
+        bottom: 10px;
+        right: 10px;
+        border-left: none;
+        border-top: none;
       }
 
+      video,
       canvas {
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: contain; /* Changed to contain so we see full video frame even if uploaded */
+        display: block;
       }
 
-      .controls-bar {
+      /* Only hide video if we want canvas overlay, but we layer them */
+      video {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      #overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 5;
+        pointer-events: all; /* Allow drawing on canvas */
+      }
+
+      .live-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        padding: 4px 10px;
+        border-radius: 4px;
+        color: var(--danger);
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        border: 1px solid rgba(239, 68, 68, 0.3);
         display: flex;
-        gap: 10px;
-        padding: 15px;
-        background: var(--bg-card);
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        flex-wrap: wrap;
         align-items: center;
+        gap: 6px;
+        z-index: 20;
+        pointer-events: none;
+      }
+      .live-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--danger);
+        border-radius: 50%;
+        animation: pulse-red 1.5s infinite;
       }
 
-      button {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 16px;
-        font-family: inherit;
-        font-weight: 500;
-        font-size: 0.9rem;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s;
-        background: var(--bg-card-hover);
-        color: var(--text-main);
-      }
-
-      button:hover {
-        background: var(--border);
-      }
-
-      button.primary {
-        background: var(--primary);
-        color: white;
-      }
-      button.primary:hover {
-        background: var(--primary-hover);
-      }
-
-      button.action-btn {
-        background: var(--warning);
-        color: #000;
-      }
-      button.action-btn:hover {
-        background: #d97706;
-      }
-
-      button.active-mode {
-        background: var(--success);
-        color: #fff;
-        animation: pulse 1.5s infinite;
-      }
-
-      /* Utility buttons (secondary) */
-      button.secondary {
-        padding: 8px 12px;
-        font-size: 0.85rem;
-        color: var(--text-muted);
-      }
-      button.secondary:hover {
-        color: var(--text-main);
-      }
-
-      @keyframes pulse {
-        0% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.7;
-        }
-        100% {
-          opacity: 1;
-        }
-      }
-
-      .btn-icon {
-        padding: 6px;
-        font-size: 1.1rem;
-        background: transparent;
+      .source-badge {
+        background: rgba(0, 0, 0, 0.6);
         color: var(--primary);
+        border-color: var(--primary-glow);
       }
-      .btn-icon:hover {
-        background: rgba(59, 130, 246, 0.2);
-      }
-
-      /* Right Column: Data */
-      .data-section {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        height: 100%;
-        overflow: hidden;
+      .source-dot {
+        background: var(--primary);
+        animation: none;
       }
 
-      /* Stat Cards */
-      .stats-grid {
+      /* --- Stats Deck (Bottom Left) --- */
+      .stats-deck {
+        grid-column: 1 / 2;
+        grid-row: 2 / 3;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
+        gap: 16px;
+        height: 120px;
       }
 
       .stat-card {
-        background: var(--bg-card);
-        padding: 15px;
-        border-radius: 12px;
+        background: linear-gradient(
+          180deg,
+          rgba(31, 41, 55, 0.4) 0%,
+          rgba(17, 24, 39, 0.6) 100%
+        );
+        backdrop-filter: blur(10px);
         border: 1px solid var(--border);
-        text-align: center;
+        border-radius: 12px;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s;
+      }
+      .stat-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--border-highlight);
       }
 
-      .stat-card h3 {
-        margin: 0;
+      .stat-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-muted);
         font-size: 0.75rem;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--text-muted);
       }
 
-      .stat-card p {
-        margin: 5px 0 0;
-        font-size: 1.75rem;
+      .stat-value {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 2.5rem;
         font-weight: 700;
+        line-height: 1;
+        color: var(--text-main);
       }
 
-      .text-green {
+      /* Color coding stats */
+      .stat-card.primary .stat-value {
+        color: var(--primary);
+        text-shadow: 0 0 20px var(--primary-dim);
+      }
+      .stat-card.success .stat-value {
         color: var(--success);
+        text-shadow: 0 0 20px var(--success-dim);
       }
-      .text-red {
+      .stat-card.danger .stat-value {
         color: var(--danger);
+        text-shadow: 0 0 20px var(--danger-dim);
       }
 
-      /* Tabbed Panel */
-      .tab-panel {
-        background: var(--bg-card);
+      /* --- Data Panel (Right) --- */
+      .data-panel {
+        grid-column: 2 / 3;
+        grid-row: 1 / 3;
         border-radius: 12px;
-        border: 1px solid var(--border);
-        flex: 1;
         display: flex;
         flex-direction: column;
         overflow: hidden;
       }
 
-      .tabs-header {
+      /* Tabs */
+      .tabs-nav {
         display: flex;
-        border-bottom: 1px solid var(--border);
+        padding: 6px;
+        gap: 6px;
         background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid var(--border);
       }
 
       .tab-btn {
         flex: 1;
-        padding: 15px;
-        background: transparent;
-        color: var(--text-muted);
-        border: none;
-        border-bottom: 2px solid transparent;
-        cursor: pointer;
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
         font-weight: 600;
-        transition: 0.2s;
-        border-radius: 0;
+        color: var(--text-muted);
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
       }
 
       .tab-btn:hover {
-        background: rgba(255, 255, 255, 0.05);
         color: var(--text-main);
+        background: rgba(255, 255, 255, 0.03);
       }
 
       .tab-btn.active {
+        background: var(--bg-glass-hover);
         color: var(--primary);
-        border-bottom-color: var(--primary);
-        background: rgba(59, 130, 246, 0.1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.05);
       }
 
       .tab-content {
-        display: none;
         flex: 1;
-        overflow-y: auto;
-        padding: 0;
+        overflow: hidden;
+        display: none;
+        position: relative;
       }
-
       .tab-content.active {
-        display: block;
+        display: flex;
+        flex-direction: column;
+        animation: fadeIn 0.3s ease;
       }
 
       /* Tables */
+      .table-container {
+        flex: 1;
+        overflow-y: auto;
+      }
+
       table {
         width: 100%;
         border-collapse: collapse;
@@ -292,71 +488,116 @@
       thead {
         position: sticky;
         top: 0;
-        background: var(--bg-card);
+        background: #0f1523; /* Solid color to cover scroll */
         z-index: 10;
         box-shadow: 0 1px 0 var(--border);
       }
 
       th {
         text-align: left;
-        padding: 12px 15px;
+        padding: 14px 16px;
         color: var(--text-muted);
         font-weight: 600;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
       }
 
       td {
-        padding: 10px 15px;
-        border-bottom: 1px solid var(--border);
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        color: var(--text-main);
+        transition: background 0.2s;
       }
 
       tr:hover td {
         background: rgba(255, 255, 255, 0.02);
       }
 
-      /* Logs */
-      .log-container {
-        height: 150px;
-        background: #111;
-        border-radius: 8px;
-        padding: 10px;
-        font-family: "Courier New", monospace;
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        overflow-y: auto;
-        border: 1px solid var(--border);
-        margin-top: auto;
+      .font-mono {
+        font-family: "JetBrains Mono", monospace;
       }
 
-      .log-entry {
-        margin-bottom: 4px;
-        border-bottom: 1px dashed #333;
-        padding-bottom: 2px;
+      /* Revenue Header inside Tab */
+      .revenue-summary {
+        padding: 20px;
+        background: linear-gradient(
+          90deg,
+          rgba(16, 185, 129, 0.05) 0%,
+          transparent 100%
+        );
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .revenue-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--success);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .revenue-amount {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        text-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
       }
 
-      /* Scrollbar Styling */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+      /* Action Buttons in Table */
+      .action-cell {
+        display: flex;
+        gap: 8px;
       }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #475569;
+      .icon-btn {
+        width: 28px;
+        height: 28px;
         border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-muted);
+        transition: all 0.2s;
       }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
+      .icon-btn:hover {
+        background: var(--text-main);
+        color: var(--bg-body);
+      }
+      .icon-btn.delete:hover {
+        background: var(--danger);
+        color: #fff;
       }
 
-      .btn-icon.delete {
+      /* --- Toast/Floating --- */
+      .home-float {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        text-decoration: none;
+        opacity: 0.6;
+        transition: all 0.2s;
+        z-index: 999;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 8px 12px;
+        border-radius: 8px;
+      }
+      .home-float:hover {
+        opacity: 1;
+        background: rgba(239, 68, 68, 0.1);
         color: var(--danger);
       }
-      .btn-icon.delete:hover {
-        background: rgba(239, 68, 68, 0.2);
-      }
 
-      /* Modal Overlay */
+      /* --- Modal Styles (THEMED) --- */
       .modal-overlay {
         display: none;
         position: fixed;
@@ -364,25 +605,277 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 2000; /* Above sidebar */
         justify-content: center;
         align-items: center;
       }
 
       .modal-box {
-        background: var(--bg-card);
+        background: rgba(17, 24, 39, 0.95);
         border: 1px solid var(--border);
         padding: 30px;
         border-radius: 16px;
-        width: 100%;
-        max-width: 350px;
+        width: 90%;
+        max-width: 380px;
         text-align: center;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-        animation: popIn 0.2s ease-out;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+        animation: popIn 0.3s var(--ease-out);
       }
 
+      .modal-icon {
+        width: 64px;
+        height: 64px;
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--danger);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        margin: 0 auto 20px auto;
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+      }
+
+      /* Dynamic Icon Colors */
+      .modal-icon.warning {
+        color: var(--warning);
+        background: rgba(245, 158, 11, 0.15);
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+      }
+      .modal-icon.info {
+        color: var(--primary);
+        background: rgba(6, 182, 212, 0.15);
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+      }
+
+      .modal-box h3 {
+        margin: 0 0 12px 0;
+        color: var(--text-main);
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+      .modal-box p {
+        margin: 0 0 25px 0;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+      }
+
+      .modal-btn {
+        flex: 1;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+      }
+
+      .modal-btn.cancel {
+        background: transparent;
+        border-color: var(--border);
+        color: var(--text-muted);
+      }
+      .modal-btn.cancel:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-main);
+      }
+
+      .modal-btn.confirm {
+        background: var(--danger);
+        color: white;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+      }
+      .modal-btn.confirm:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+      }
+
+      /* Toast Notification */
+      .toast-container {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 3000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+      }
+
+      .toast {
+        background: rgba(17, 24, 39, 0.9);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border);
+        color: var(--text-main);
+        padding: 12px 24px;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      .toast.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .toast.success {
+        border-color: var(--success);
+        color: var(--success);
+      }
+      .toast.error {
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+      .toast.info {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+
+      /* --- Ticket Modal Styles --- */
+      .ticket-container {
+        background: var(--bg-panel);
+        width: 100%;
+        max-width: 380px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.7);
+        color: var(--text-main);
+      }
+
+      .ticket-top {
+        height: 8px;
+        background: var(--primary);
+        width: 100%;
+        box-shadow: 0 0 15px var(--primary-glow);
+      }
+
+      .ticket-content {
+        padding: 30px;
+        text-align: center;
+      }
+
+      .ticket-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 5px;
+      }
+
+      .ticket-label {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+      }
+
+      .ticket-divider {
+        border-bottom: 2px dashed var(--border);
+        margin: 20px 0;
+        position: relative;
+      }
+
+      .ticket-price-section {
+        margin: 20px 0;
+      }
+      .ticket-price-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+      .ticket-price-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--success);
+        font-family: "JetBrains Mono", monospace;
+        text-shadow: 0 0 20px var(--success-dim);
+      }
+
+      .ticket-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        text-align: left;
+        margin-bottom: 25px;
+      }
+
+      .ticket-info-item label {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+      .ticket-info-item span {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--text-main);
+      }
+
+      .qr-wrapper {
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        display: inline-block;
+        margin-bottom: 20px;
+      }
+
+      .ticket-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .ticket-btn {
+        flex: 1;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+      }
+      .ticket-btn.print {
+        background: transparent;
+        border-color: var(--border);
+        color: var(--text-muted);
+      }
+      .ticket-btn.print:hover {
+        color: var(--text-main);
+        border-color: var(--text-main);
+      }
+
+      .ticket-btn.close {
+        background: var(--danger);
+        color: white;
+      }
+      .ticket-btn.close:hover {
+        background: #dc2626;
+      }
+
+      /* Animations */
       @keyframes popIn {
         from {
           transform: scale(0.9);
@@ -393,90 +886,209 @@
           opacity: 1;
         }
       }
-
-      .modal-icon {
-        width: 60px;
-        height: 60px;
-        background: rgba(239, 68, 68, 0.1);
-        color: var(--danger);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 32px;
-        margin: 0 auto 15px auto;
+      @keyframes pulse-green {
+        0% {
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        }
+      }
+      @keyframes pulse-red {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+      @keyframes pulse-border {
+        0% {
+          border-color: var(--warning);
+        }
+        50% {
+          border-color: transparent;
+        }
+        100% {
+          border-color: var(--warning);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
-      .modal-box h3 {
-        margin: 0 0 10px 0;
-        color: var(--text-main);
-      }
-      .modal-box p {
-        margin: 0 0 25px 0;
-        color: var(--text-muted);
-        font-size: 0.9rem;
-        line-height: 1.5;
-      }
-
-      .modal-actions {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        width: 100%;
-      }
-
-      .modal-actions button {
-        justify-content: center;
-        flex: 1;
-      }
-
-      .btn-cancel {
-        background: transparent;
-        border: 1px solid var(--border);
-        color: var(--text-main);
-      }
-      .btn-cancel:hover {
-        background: var(--bg-card-hover);
-      }
-
-      .btn-danger-solid {
-        background: var(--danger);
-        color: white;
-        border: none;
-      }
-      .btn-danger-solid:hover {
-        background: #dc2626;
-      }
-
-      @media (max-width: 1000px) {
+      /* Responsive */
+      @media (max-width: 1200px) {
         .app-container {
           grid-template-columns: 1fr;
+          grid-template-rows: auto auto 1fr;
           height: auto;
           overflow-y: auto;
         }
-        body {
-          height: auto;
-          overflow-y: auto;
+        .sidebar {
+          width: 80px;
+          align-items: center;
+          padding: 15px;
         }
-        .data-section {
-          height: 500px;
+        .brand span,
+        .nav-btn span,
+        .section-title,
+        .status-indicator span {
+          display: none;
+        }
+        .nav-btn {
+          justify-content: center;
+          padding: 12px;
+        }
+        .stats-deck {
+          height: auto;
+        }
+        /* Keep home-float visible but just icon */
+        .home-float span {
+          display: none;
         }
       }
     </style>
   </head>
   <body>
-    <div class="app-container">
-      <div class="header">
-        <div class="brand">
-          <i class="ph-fill ph-car-profile"></i> ParkSense AI
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="brand">
+        <div class="brand-icon-box">
+          <i class="ph-bold ph-car-profile"></i>
         </div>
-        <div style="font-size: 0.9rem; color: var(--text-muted)">
-          System Status: <span style="color: var(--success)">● Online</span>
-        </div>
+        <span>Loca<span style="color: var(--primary)">Park</span></span>
       </div>
 
-      <div class="camera-section">
+      <div class="status-indicator" id="system-status">
+        <div class="pulse-dot"></div>
+        <span id="status-text">Live Cam</span>
+      </div>
+
+      <div class="control-section">
+        <div class="section-title">Mapping Tools</div>
+        <button
+          id="add-slot-btn"
+          class="nav-btn btn-primary"
+          onclick="toggleDrawingMode()"
+          title="Define new slot"
+        >
+          <i class="ph-bold ph-plus"></i>
+          <span>Add Slot</span>
+        </button>
+        <button class="nav-btn" onclick="resetMap()" title="Clear Map">
+          <i class="ph-bold ph-eraser"></i>
+          <span>Clear Canvas</span>
+        </button>
+      </div>
+
+      <!-- NEW SECTION: Video Source -->
+      <div class="control-section">
+        <div class="section-title">Video Source</div>
+        <!-- Hidden Inputs -->
+        <input
+          type="file"
+          id="video-loader"
+          style="display: none"
+          accept="video/*"
+          onchange="handleVideoUpload(this)"
+        />
+
+        <button class="nav-btn" onclick="triggerLoadVideo()">
+          <i class="ph-bold ph-film-strip"></i>
+          <span>Upload Video</span>
+        </button>
+        <button class="nav-btn" onclick="startCamera()" id="btn-webcam">
+          <i class="ph-bold ph-video-camera"></i>
+          <span>Live Webcam</span>
+        </button>
+
+        <!-- Play Button (Visible only when video uploaded) -->
+        <button
+          id="btn-video-control"
+          class="nav-btn"
+          onclick="toggleVideoPlayback()"
+          style="
+            display: none;
+            color: var(--primary);
+            border-color: var(--primary-dim);
+          "
+        >
+          <i class="ph-bold ph-play"></i>
+          <span>Start Analysis</span>
+        </button>
+      </div>
+
+      <div class="control-section">
+        <div class="section-title">Configuration</div>
+        <!-- Hidden File Input for Layout -->
+        <input
+          type="file"
+          id="layout-loader"
+          style="display: none"
+          accept=".json"
+          onchange="importLayoutFile(this)"
+        />
+
+        <button class="nav-btn" onclick="exportLayout()">
+          <i class="ph-bold ph-download-simple"></i>
+          <span>Export Layout</span>
+        </button>
+        <button class="nav-btn" onclick="triggerLoadLayout()">
+          <i class="ph-bold ph-upload-simple"></i>
+          <span>Import Layout</span>
+        </button>
+      </div>
+
+      <div class="control-section">
+        <div class="section-title">System</div>
+        <button class="nav-btn" onclick="captureBackground()">
+          <i class="ph-bold ph-aperture"></i>
+          <span>Calibrate Cam</span>
+        </button>
+        <button class="nav-btn" onclick="openGraphs()">
+          <i class="ph-bold ph-chart-line-up"></i>
+          <span>Analytics</span>
+        </button>
+        <a href="settings.html" class="nav-btn">
+          <i class="ph-bold ph-gear"></i>
+          <span>Settings</span>
+        </a>
+        <button class="nav-btn" onclick="openHelp()">
+          <i class="ph-bold ph-question"></i>
+          <span>Help</span>
+        </button>
+      </div>
+
+      <!-- UPDATED LOGOUT BUTTON -->
+      <button class="home-float" onclick="confirmLogout()">
+        <i class="ph-bold ph-sign-out"></i> <span>Logout</span>
+      </button>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="app-container">
+      <!-- Video Feed -->
+      <div class="feed-container">
         <div class="video-wrapper">
+          <div class="live-badge" id="live-badge">
+            <div class="live-dot" id="live-dot"></div>
+            <span id="live-text">REC</span>
+          </div>
+          <!-- Video element reused for both webcam and file -->
           <video
             id="webcam"
             autoplay
@@ -486,141 +1098,289 @@
           ></video>
           <canvas id="overlay"></canvas>
         </div>
+      </div>
 
-        <div class="controls-bar">
-          <button
-            id="add-slot-btn"
-            class="action-btn"
-            onclick="toggleDrawingMode()"
-          >
-            <i class="ph ph-plus-circle"></i> Add Slot
-          </button>
-
-          <button onclick="resetMap()">
-            <i class="ph ph-eraser"></i> Clear
-          </button>
-
-          <input
-            type="file"
-            id="layout-loader"
-            style="display: none"
-            accept=".json"
-            onchange="importLayoutFile(this)"
-          />
-
-          <button class="secondary" onclick="exportLayout()">
-            <i class="ph ph-download-simple"></i> Save Layout
-          </button>
-          <button class="secondary" onclick="triggerLoadLayout()">
-            <i class="ph ph-upload-simple"></i> Load Layout
-          </button>
-
-          <div
-            style="
-              width: 1px;
-              background: var(--border);
-              margin: 0 10px;
-              height: 30px;
-            "
-          ></div>
-
-          <button class="primary" onclick="captureBackground()">
-            <i class="ph ph-aperture"></i> Calibrate
-          </button>
-          <button onclick="openLatestTicket()">
-            <i class="ph ph-ticket"></i> Last Ticket
-          </button>
-          <button onclick="openGraphs()">
-            <i class="ph ph-chart-line-up"></i> Analytics
-          </button>
+      <!-- Statistics Deck -->
+      <div class="stats-deck">
+        <div class="stat-card primary">
+          <div class="stat-header">
+            <i class="ph-bold ph-squares-four"></i> Capacity
+          </div>
+          <div class="stat-value" id="total-count">0</div>
         </div>
-
-        <div class="log-container" id="log-box">
-          <div class="log-entry">System initialized. Waiting for camera...</div>
+        <div class="stat-card success">
+          <div class="stat-header">
+            <i class="ph-bold ph-check-circle"></i> Available
+          </div>
+          <div class="stat-value" id="free-count">0</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-header"><i class="ph-bold ph-car"></i> Occupied</div>
+          <div class="stat-value" id="occupied-count">0</div>
         </div>
       </div>
 
-      <div class="data-section">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <h3>Total Slots</h3>
-            <p id="total-count">0</p>
-          </div>
-          <div
-            class="stat-card"
-            style="border-bottom: 2px solid var(--success)"
-          >
-            <h3>Available</h3>
-            <p id="free-count" class="text-green">0</p>
-          </div>
-          <div class="stat-card" style="border-bottom: 2px solid var(--danger)">
-            <h3>Occupied</h3>
-            <p id="occupied-count" class="text-red">0</p>
+      <!-- Data/Tabs Panel -->
+      <div class="data-panel glass-panel">
+        <div class="tabs-nav">
+          <button class="tab-btn active" onclick="switchTab('history')">
+            <i class="ph-bold ph-clock-counter-clockwise"></i> Live Log
+          </button>
+          <button class="tab-btn" onclick="switchTab('revenue')">
+            <i class="ph-bold ph-currency-circle-dollar"></i> Revenue
+          </button>
+        </div>
+
+        <div id="history" class="tab-content active">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Slot ID</th>
+                  <th>Entry</th>
+                  <th>Exit</th>
+                  <th>Duration</th>
+                  <th>Fee</th>
+                  <th style="text-align: right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="history-body">
+                <!-- JS populates this -->
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div class="tab-panel">
-          <div class="tabs-header">
-            <button class="tab-btn active" onclick="switchTab('history')">
-              <i class="ph ph-clock-counter-clockwise"></i> Activity History
-            </button>
-            <button class="tab-btn" onclick="switchTab('revenue')">
-              <i class="ph ph-currency-circle-dollar"></i> Revenue
-            </button>
-          </div>
-
-          <div id="history" class="tab-content active">
-            <table>
-              <thead>
-                <tr>
-                  <th>Slot</th>
-                  <th>Entry</th>
-                  <th>Exit</th>
-                  <th>Time</th>
-                  <th>Fee</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="history-body"></tbody>
-            </table>
-          </div>
-
-          <div id="revenue" class="tab-content">
-            <div
-              style="
-                padding: 15px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 1px solid var(--border);
-              "
+        <div id="revenue" class="tab-content">
+          <div class="revenue-summary">
+            <span class="revenue-label">Total Generated</span>
+            <span class="revenue-amount"
+              >₱<span id="total-revenue">0.00</span></span
             >
-              <span style="color: var(--text-muted)">Total Earnings</span>
-              <span
-                style="
-                  font-size: 1.2rem;
-                  font-weight: bold;
-                  color: var(--success);
-                "
-                >₱<span id="total-revenue">0.00</span></span
-              >
-            </div>
+          </div>
+          <div class="table-container">
             <table>
               <thead>
                 <tr>
-                  <th>Trans ID</th>
-                  <th>Slot</th>
+                  <th>Trans. ID</th>
+                  <th>Slot Ref</th>
                   <th>Amount</th>
                 </tr>
               </thead>
-              <tbody id="revenue-body"></tbody>
+              <tbody id="revenue-body">
+                <!-- JS populates this -->
+              </tbody>
             </table>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Hidden Modal: Confirm -->
+    <div id="confirm-modal" class="modal-overlay">
+      <div class="modal-box glass-panel">
+        <div class="modal-icon">
+          <i class="ph-bold ph-trash"></i>
+        </div>
+        <h3 id="modal-title">Confirm Action</h3>
+        <p id="modal-msg">Are you sure you want to proceed?</p>
+        <div class="modal-actions">
+          <button class="modal-btn cancel" onclick="closeModal(false)">
+            Cancel
+          </button>
+          <button class="modal-btn confirm" onclick="closeModal(true)">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden Modal: Ticket Receipt -->
+    <div id="ticket-modal" class="modal-overlay">
+      <div class="ticket-container">
+        <div class="ticket-top"></div>
+        <div class="ticket-content">
+          <div class="ticket-brand">
+            <i class="ph-fill ph-car-profile" style="color: var(--primary)"></i>
+            LocaPark
+          </div>
+          <div class="ticket-label">Official Receipt</div>
+
+          <div class="ticket-price-section">
+            <div class="ticket-price-value">
+              ₱<span id="ticket-payment">0.00</span>
+            </div>
+            <div class="ticket-price-label">Total Amount Paid</div>
+          </div>
+
+          <div class="ticket-divider"></div>
+
+          <div class="ticket-info-grid">
+            <div class="ticket-info-item">
+              <label>Slot Number</label>
+              <span id="ticket-slot">-</span>
+            </div>
+            <div class="ticket-info-item">
+              <label>Duration</label>
+              <span id="ticket-duration">00:00:00</span>
+            </div>
+            <div class="ticket-info-item">
+              <label>Entry Time</label>
+              <span id="ticket-entry">-</span>
+            </div>
+            <div class="ticket-info-item">
+              <label>Exit Time</label>
+              <span id="ticket-exit">-</span>
+            </div>
+          </div>
+
+          <div class="qr-wrapper">
+            <div id="qrcode"></div>
+          </div>
+
+          <div class="ticket-actions">
+            <button class="ticket-btn print" onclick="window.print()">
+              <i class="ph-bold ph-printer"></i> Print
+            </button>
+            <button class="ticket-btn close" onclick="closeTicketModal()">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Javascript Logic -->
     <script>
+      // --- Config Loader ---
+      let appConfig = {
+        baseRate: 35, // Initial Fee
+        incrementAmount: 5, // Add 5 pesos...
+        baseDuration: 10, // ...after first 10 seconds...
+        incrementInterval: 5, // ...every 5 seconds
+      };
+
+      // --- Custom Modal Logic ---
+      let modalResolve = null;
+
+      function showConfirmModal(
+        message,
+        title = "Confirm Action",
+        iconClass = "ph-warning-circle"
+      ) {
+        const modal = document.getElementById("confirm-modal");
+        const msgEl = document.getElementById("modal-msg");
+        const titleEl = document.getElementById("modal-title");
+        const iconEl = document.querySelector("#confirm-modal .modal-icon i");
+
+        msgEl.innerText = message;
+        titleEl.innerText = title;
+
+        const iconContainer = document.querySelector(
+          "#confirm-modal .modal-icon"
+        );
+        iconContainer.className = "modal-icon";
+
+        if (iconClass.includes("trash") || iconClass.includes("sign-out"))
+          iconContainer.classList.add("danger");
+        else if (iconClass.includes("warning"))
+          iconContainer.classList.add("warning");
+        else iconContainer.classList.add("info");
+
+        iconEl.className = `ph-bold ${iconClass}`;
+
+        modal.style.display = "flex";
+
+        return new Promise((resolve) => {
+          modalResolve = resolve;
+        });
+      }
+
+      function closeModal(isConfirmed) {
+        document.getElementById("confirm-modal").style.display = "none";
+        if (modalResolve) {
+          modalResolve(isConfirmed);
+          modalResolve = null;
+        }
+      }
+
+      async function confirmLogout() {
+        const confirmed = await showConfirmModal(
+          "Are you sure you want to log out?",
+          "Confirm Logout",
+          "ph-sign-out"
+        );
+        if (confirmed) {
+          window.location.href = "home.html";
+        }
+      }
+
+      // --- Ticket Modal Logic ---
+      function openSpecificTicket(ticketData) {
+        document.getElementById("ticket-slot").innerText =
+          ticketData.slot || "-";
+        document.getElementById("ticket-entry").innerText =
+          ticketData.entry || "-";
+        document.getElementById("ticket-exit").innerText =
+          ticketData.exit || "-";
+        document.getElementById("ticket-duration").innerText =
+          ticketData.duration || "00:00:00";
+
+        const payVal = parseFloat(ticketData.payment || 0).toFixed(2);
+        document.getElementById("ticket-payment").innerText = payVal;
+
+        const qrContainer = document.getElementById("qrcode");
+        qrContainer.innerHTML = "";
+        new QRCode(qrContainer, {
+          text: JSON.stringify(ticketData),
+          width: 128,
+          height: 128,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+
+        document.getElementById("ticket-modal").style.display = "flex";
+      }
+
+      function closeTicketModal() {
+        document.getElementById("ticket-modal").style.display = "none";
+      }
+
+      // --- Toast System ---
+      function showToast(message, type = "info") {
+        let container = document.querySelector(".toast-container");
+        if (!container) {
+          container = document.createElement("div");
+          container.className = "toast-container";
+          document.body.appendChild(container);
+        }
+
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+
+        let icon = "ph-info";
+        if (type === "success") icon = "ph-check-circle";
+        if (type === "error") icon = "ph-warning-circle";
+
+        toast.innerHTML = `<i class="ph-bold ${icon}"></i> <span>${message}</span>`;
+
+        container.appendChild(toast);
+
+        requestAnimationFrame(() => {
+          toast.classList.add("visible");
+        });
+
+        setTimeout(() => {
+          toast.classList.remove("visible");
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+
+      function openHelp() {
+        window.location.href = "help.html";
+      }
+
       // --- UI Logic ---
       function switchTab(tabId) {
         document
@@ -640,7 +1400,6 @@
       const video = document.getElementById("webcam");
       const canvas = document.getElementById("overlay");
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      const logBox = document.getElementById("log-box");
       const historyBody = document.getElementById("history-body");
       const revenueBody = document.getElementById("revenue-body");
       const totalRevenueEl = document.getElementById("total-revenue");
@@ -649,24 +1408,38 @@
       const COVERAGE_THRESHOLD = 0.15;
       let backgroundPixels = null;
       let isStreamReady = false;
+      let inputMode = "webcam"; // 'webcam' or 'video'
       let revenueTotal = 0;
       let transactionCount = 0;
 
-      // --- CUSTOM LAYOUT VARIABLES ---
       let slots = [];
       let isDrawing = false;
       let tempPoints = [];
+
+      let draggingSlot = null;
+      let dragStartPoint = null;
+      let hoveredSlot = null;
 
       let latestParking = {};
       let historyData = [];
       let revenueData = [];
 
+      // --- VIDEO & WEBCAM MANAGEMENT ---
+
       async function startCamera() {
+        inputMode = "webcam";
+        updateStatusBadge(true);
+        document.getElementById("btn-video-control").style.display = "none";
+        video.controls = false;
+
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
             video: { width: 640, height: 480 },
           });
           video.srcObject = stream;
+          video.src = "";
+          video.play();
+
           video.onloadedmetadata = () => {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -676,220 +1449,154 @@
           };
         } catch (err) {
           addLog("Error accessing camera: " + err.message);
+          showToast("Camera Access Failed", "error");
         }
       }
 
-      function captureBackground() {
-        if (!isStreamReady) return;
-        ctx.save();
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        ctx.restore();
-
-        backgroundPixels = ctx.getImageData(
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        ).data;
-        addLog("Background calibrated. Detection Active.");
+      function triggerLoadVideo() {
+        document.getElementById("video-loader").click();
       }
 
-      // --- MOUSE INPUT FOR DRAWING SLOTS ---
-      canvas.addEventListener("mousedown", (e) => {
-        if (!isDrawing) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-
-        const x = (e.clientX - rect.left) * scaleX;
-        const y = (e.clientY - rect.top) * scaleY;
-
-        tempPoints.push({ x, y });
-
-        if (tempPoints.length === 4) {
-          finalizeSlot();
-        }
-      });
-
-      function toggleDrawingMode() {
-        isDrawing = !isDrawing;
-        const btn = document.getElementById("add-slot-btn");
-        if (isDrawing) {
-          btn.classList.add("active-mode");
-          btn.innerHTML = `<i class="ph ph-pencil-simple"></i> Click 4 Points`;
-          tempPoints = [];
-        } else {
-          btn.classList.remove("active-mode");
-          btn.innerHTML = `<i class="ph ph-plus-circle"></i> Add Slot`;
-          tempPoints = [];
-        }
-      }
-
-      function finalizeSlot() {
-        const count = slots.length;
-        const letter = String.fromCharCode(65 + Math.floor(count / 5)); // A, B, C...
-        const number = (count % 5) + 1;
-        const label = `${letter}${number}`;
-
-        slots.push({
-          id: count + 1,
-          points: [...tempPoints],
-          label: label,
-          occupied: false,
-          entryTime: null,
-        });
-
-        addLog(`Created Slot ${label}`);
-        tempPoints = [];
-        saveLayout();
-      }
-
-      // --- PERSISTENCE & FILE SYSTEM ---
-      function saveLayout() {
-        localStorage.setItem("parkSenseLayout", JSON.stringify(slots));
-      }
-
-      function loadLayout() {
-        const saved = localStorage.getItem("parkSenseLayout");
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            parsed.forEach((s) => {
-              s.occupied = false;
-              s.entryTime = null;
-            });
-            slots = parsed;
-            addLog(`Auto-loaded ${slots.length} slots from memory.`);
-            updateStats();
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      }
-
-      // --- MODIFIED EXPORT FUNCTION: Ask for destination ---
-      async function exportLayout() {
-        if (slots.length === 0) {
-          alert("No slots to save!");
-          return;
-        }
-
-        // Pretty print JSON
-        const jsonString = JSON.stringify(slots, null, 2);
-
-        // Check if browser supports the "Save As" picker (Chrome, Edge, Opera)
-        if (window.showSaveFilePicker) {
-          try {
-            const handle = await window.showSaveFilePicker({
-              suggestedName: "parking_layout.json",
-              types: [
-                {
-                  description: "JSON Files",
-                  accept: { "application/json": [".json"] },
-                },
-              ],
-            });
-            const writable = await handle.createWritable();
-            await writable.write(jsonString);
-            await writable.close();
-            addLog("Layout saved successfully.");
-          } catch (err) {
-            if (err.name !== "AbortError") {
-              console.error(err);
-              addLog("Failed to save layout.");
-            }
-          }
-        } else {
-          // Fallback for browsers that don't support the API (Firefox/Safari)
-          // They will rely on the user's browser settings for "Ask where to save"
-          const dataStr =
-            "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
-          const downloadAnchorNode = document.createElement("a");
-          downloadAnchorNode.setAttribute("href", dataStr);
-          downloadAnchorNode.setAttribute("download", "parking_layout.json");
-          document.body.appendChild(downloadAnchorNode);
-          downloadAnchorNode.click();
-          downloadAnchorNode.remove();
-          addLog("Layout saved (Check Downloads folder).");
-        }
-      }
-
-      async function triggerLoadLayout() {
-        const confirmed = await showConfirmModal(
-          "If you load a layout file, your current layout will be gone. Are you sure?",
-          "Load Layout?"
-        );
-
-        if (confirmed) {
-          document.getElementById("layout-loader").click();
-        }
-      }
-
-      function importLayoutFile(input) {
+      function handleVideoUpload(input) {
         const file = input.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          try {
-            const obj = JSON.parse(event.target.result);
-            if (Array.isArray(obj)) {
-              obj.forEach((s) => {
-                s.occupied = false;
-                s.entryTime = null;
-              });
-              slots = obj;
-              saveLayout();
-              updateStats();
-              addLog(`Successfully loaded ${slots.length} slots from file.`);
-            } else {
-              alert("Invalid file format.");
-            }
-          } catch (e) {
-            alert("Error reading file: " + e.message);
-          }
+        inputMode = "video";
+        updateStatusBadge(false);
+
+        // Show the play button
+        const playBtn = document.getElementById("btn-video-control");
+        playBtn.style.display = "flex";
+        playBtn.innerHTML = `<i class="ph-bold ph-play"></i> <span>Start Analysis</span>`;
+
+        // Stop existing webcam streams
+        if (video.srcObject) {
+          video.srcObject.getTracks().forEach((track) => track.stop());
+          video.srcObject = null;
+        }
+
+        const fileURL = URL.createObjectURL(file);
+        video.src = fileURL;
+        video.load();
+
+        // IMPORTANT: Pause initially so user can place slots
+        video.pause();
+
+        // Enable controls so user can scrub to empty frame
+        video.controls = true;
+
+        video.onloadeddata = () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          isStreamReady = true;
+          backgroundPixels = null; // Reset background on new video
+
+          showToast("Video Loaded. Paused for Setup.", "info");
+          addLog("Video loaded. Please Calibrate on an empty frame.");
+
+          // Start the loop, but it will only process the current frame
+          requestAnimationFrame(processFrame);
         };
-        reader.readAsText(file);
+
         input.value = "";
       }
 
-      async function resetMap() {
+      function toggleVideoPlayback() {
+        const btn = document.getElementById("btn-video-control");
+        if (video.paused) {
+          video.play();
+          btn.innerHTML = `<i class="ph-bold ph-pause"></i> <span>Pause Analysis</span>`;
+        } else {
+          video.pause();
+          btn.innerHTML = `<i class="ph-bold ph-play"></i> <span>Resume Analysis</span>`;
+        }
+      }
+
+      function updateStatusBadge(isLive) {
+        const badge = document.getElementById("live-badge");
+        const dot = document.getElementById("live-dot");
+        const text = document.getElementById("live-text");
+        const statusText = document.getElementById("status-text");
+
+        if (isLive) {
+          badge.className = "live-badge";
+          dot.className = "live-dot";
+          text.innerText = "REC";
+          statusText.innerText = "Live Cam";
+        } else {
+          badge.className = "live-badge source-badge";
+          dot.className = "live-dot source-dot";
+          text.innerText = "VIDEO";
+          statusText.innerText = "Video File";
+        }
+      }
+
+      // --- DETECTION & PROCESSING ---
+
+      async function captureBackground() {
+        if (!isStreamReady) return;
+
+        const message =
+          inputMode === "video"
+            ? "Ensure the video is paused on an EMPTY frame (no cars in slots). Calibrate now?"
+            : "Ensure all parking slots are completely EMPTY. Continue?";
+
         const confirmed = await showConfirmModal(
-          "Are you sure you want to clear the entire map? This cannot be undone.",
-          "Clear Map"
+          message,
+          "Calibrate System",
+          "ph-aperture"
         );
 
         if (confirmed) {
-          slots = [];
-          tempPoints = [];
-          isDrawing = false;
-          document
-            .getElementById("add-slot-btn")
-            .classList.remove("active-mode");
-          document.getElementById(
-            "add-slot-btn"
-          ).innerHTML = `<i class="ph ph-plus-circle"></i> Add Slot`;
-          saveLayout();
-          addLog("Map cleared.");
-          updateStats();
+          showToast("Calibrating...", "info");
+
+          setTimeout(() => {
+            ctx.save();
+            if (inputMode === "webcam") {
+              ctx.translate(canvas.width, 0);
+              ctx.scale(-1, 1);
+            }
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            backgroundPixels = ctx.getImageData(
+              0,
+              0,
+              canvas.width,
+              canvas.height
+            ).data;
+
+            addLog("Background calibrated.");
+            showToast("Calibration Successful. You may play video.", "success");
+          }, 500);
         }
       }
 
       function processFrame() {
         if (isStreamReady) {
+          // Reset button if video ends
+          if (inputMode === "video" && video.ended) {
+            const btn = document.getElementById("btn-video-control");
+            btn.innerHTML = `<i class="ph-bold ph-arrow-counter-clockwise"></i> <span>Replay</span>`;
+          }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
           ctx.save();
-          ctx.translate(canvas.width, 0);
-          ctx.scale(-1, 1);
+          if (inputMode === "webcam") {
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+          }
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           ctx.restore();
 
-          if (backgroundPixels) detectOccupancy();
+          if (backgroundPixels && !video.ended) detectOccupancy();
+
           drawOverlays();
           updateStats();
         }
+
         requestAnimationFrame(processFrame);
       }
 
@@ -906,7 +1613,6 @@
         slots.forEach((slot) => {
           let significantDiffPixels = 0;
 
-          // Bounding Box
           const xs = slot.points.map((p) => p.x);
           const ys = slot.points.map((p) => p.y);
           const minX = Math.floor(Math.min(...xs));
@@ -939,48 +1645,379 @@
           }
 
           const coverage = significantDiffPixels / (totalArea / 16);
-          const wasOccupied = slot.occupied;
+          const wasOccupied = slot.occupied; // Visual State
 
-          if (!wasOccupied && coverage > COVERAGE_THRESHOLD) {
+          const isOccupiedNow = coverage > COVERAGE_THRESHOLD;
+          const isEmptyNow = coverage < COVERAGE_THRESHOLD * 0.8;
+
+          if (isOccupiedNow) {
+            // Visual: Red immediately
             slot.occupied = true;
-            slot.entryTime = new Date();
-            addLog(`Entry: Slot ${slot.label}`);
-          } else if (wasOccupied && coverage < COVERAGE_THRESHOLD * 0.8) {
+
+            // Timer Logic for Logging
+            if (!slot.tempEntryTime) {
+              slot.tempEntryTime = Date.now(); // Start tracking duration
+            } else {
+              const elapsed = Date.now() - slot.tempEntryTime;
+              // If 5 seconds passed and we haven't logged yet
+              if (elapsed >= 10000 && !slot.entryTime) {
+                slot.entryTime = new Date(); // Official Session Start
+                addLog(`ENTRY: Slot ${slot.label}`);
+              }
+            }
+          } else if (isEmptyNow) {
+            // Visual: Green immediately
             slot.occupied = false;
-            const exitTime = new Date();
-            const durationSec = Math.floor((exitTime - slot.entryTime) / 1000);
 
-            let paymentVal = 35;
-            if (durationSec > 10)
-              paymentVal += Math.ceil((durationSec - 10) / 5) * 5;
+            // Log Logic: Did we have a valid session?
+            if (slot.entryTime) {
+              const exitTime = new Date();
+              const durationSec = Math.floor(
+                (exitTime - slot.entryTime) / 1000
+              );
 
-            const paymentStr = paymentVal.toFixed(2);
+              // Pricing Logic
+              let paymentVal = parseFloat(appConfig.baseRate);
 
-            addLog(`Exit: Slot ${slot.label} | ₱${paymentStr}`);
+              // If duration exceeds baseDuration (10s)
+              if (durationSec > appConfig.baseDuration) {
+                const extraTime = durationSec - appConfig.baseDuration;
+                // Calculate how many 5-second intervals passed (or started)
+                const intervals = Math.ceil(
+                  extraTime / appConfig.incrementInterval
+                );
+                paymentVal += intervals * parseFloat(appConfig.incrementAmount);
+              }
 
-            // UPDATED CALLS: Pass entryTime for ID matching
-            const isoEntry = slot.entryTime.toISOString();
+              const paymentStr = paymentVal.toFixed(2);
 
-            addHistoryRow(
-              slot.label,
-              slot.entryTime,
-              exitTime,
-              formatDuration(durationSec),
-              paymentStr
-            );
+              addLog(`EXIT: Slot ${slot.label} | ₱${paymentStr}`);
 
-            addRevenueRow(slot.label, paymentStr, isoEntry);
-            saveToDatabase(
-              slot.label,
-              slot.entryTime,
-              exitTime,
-              durationSec,
-              paymentStr
-            );
+              // --- START NEW DB SAVE LOGIC ---
+              const payload = {
+                slot: slot.label,
+                entry_time: slot.entryTime.toISOString(),
+                exit_time: exitTime.toISOString(),
+                duration_sec: durationSec,
+                payment: paymentVal,
+              };
 
-            slot.entryTime = null;
+              fetch("save_parking.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              })
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.status === "success") {
+                    showToast("Saved to Database", "success");
+                  } else {
+                    showToast("DB Save Failed: " + data.message, "error");
+                  }
+                })
+                .catch((err) => console.error("Save error:", err));
+              // --- END NEW DB SAVE LOGIC ---
+
+              addHistoryRow(
+                slot.label,
+                slot.entryTime,
+                exitTime,
+                formatDuration(durationSec),
+                paymentStr
+              );
+              addRevenueRow(
+                slot.label,
+                paymentStr,
+                slot.entryTime.toISOString()
+              );
+
+              slot.entryTime = null; // End session
+            }
+
+            // Reset temporary timer since it's empty
+            slot.tempEntryTime = null;
           }
         });
+      }
+
+      // --- MAPPING TOOLS (DRAWING) ---
+
+      // Update Coordinate Logic to handle video aspect ratios properly (object-fit: contain)
+      function getCanvasCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const rectWidth = rect.width;
+        const rectHeight = rect.height;
+
+        // Calculate aspect ratios
+        const canvasRatio = canvasWidth / canvasHeight;
+        const rectRatio = rectWidth / rectHeight;
+
+        let scale;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (rectRatio > canvasRatio) {
+          // Rect is wider than canvas -> Canvas fits height
+          scale = rectHeight / canvasHeight;
+          offsetX = (rectWidth - canvasWidth * scale) / 2;
+        } else {
+          // Rect is taller/same -> Canvas fits width
+          scale = rectWidth / canvasWidth;
+          offsetY = (rectHeight - canvasHeight * scale) / 2;
+        }
+
+        const finalX = (x - offsetX) / scale;
+        const finalY = (y - offsetY) / scale;
+
+        return { x: finalX, y: finalY };
+      }
+
+      function isPointInPolygon(p, polygon) {
+        let isInside = false;
+        let minX = polygon[0].x,
+          maxX = polygon[0].x;
+        let minY = polygon[0].y,
+          maxY = polygon[0].y;
+        for (let n = 1; n < polygon.length; n++) {
+          const q = polygon[n];
+          minX = Math.min(q.x, minX);
+          maxX = Math.max(q.x, maxX);
+          minY = Math.min(q.y, minY);
+          maxY = Math.max(q.y, maxY);
+        }
+
+        if (p.x < minX || p.x > maxX || p.y < minY || p.y > maxY) {
+          return false;
+        }
+
+        let i = 0,
+          j = polygon.length - 1;
+        for (i, j; i < polygon.length; j = i++) {
+          if (
+            polygon[i].y > p.y != polygon[j].y > p.y &&
+            p.x <
+              ((polygon[j].x - polygon[i].x) * (p.y - polygon[i].y)) /
+                (polygon[j].y - polygon[i].y) +
+                polygon[i].x
+          ) {
+            isInside = !isInside;
+          }
+        }
+        return isInside;
+      }
+
+      // Mouse Events
+      canvas.addEventListener("mousedown", (e) => {
+        const pos = getCanvasCoordinates(e);
+
+        if (isDrawing) {
+          tempPoints.push(pos);
+          if (tempPoints.length === 4) {
+            finalizeSlot();
+          }
+        } else {
+          for (let i = slots.length - 1; i >= 0; i--) {
+            if (isPointInPolygon(pos, slots[i].points)) {
+              draggingSlot = slots[i];
+              dragStartPoint = pos;
+              break;
+            }
+          }
+        }
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        const pos = getCanvasCoordinates(e);
+
+        if (draggingSlot && dragStartPoint) {
+          const dx = pos.x - dragStartPoint.x;
+          const dy = pos.y - dragStartPoint.y;
+          draggingSlot.points.forEach((p) => {
+            p.x += dx;
+            p.y += dy;
+          });
+          dragStartPoint = pos;
+          return;
+        }
+
+        if (!isDrawing) {
+          let found = null;
+          for (let i = slots.length - 1; i >= 0; i--) {
+            if (isPointInPolygon(pos, slots[i].points)) {
+              found = slots[i];
+              break;
+            }
+          }
+          hoveredSlot = found;
+          canvas.style.cursor = found ? "move" : "default";
+        }
+      });
+
+      canvas.addEventListener("mouseup", () => {
+        if (draggingSlot) {
+          draggingSlot = null;
+          dragStartPoint = null;
+          saveLayout();
+        }
+      });
+
+      canvas.addEventListener("contextmenu", async (e) => {
+        e.preventDefault();
+        if (isDrawing) return;
+
+        const pos = getCanvasCoordinates(e);
+        const clickedSlotIndex = slots.findIndex((s) =>
+          isPointInPolygon(pos, s.points)
+        );
+
+        if (clickedSlotIndex !== -1) {
+          const slotLabel = slots[clickedSlotIndex].label;
+          const confirmed = await showConfirmModal(
+            `Delete Slot ${slotLabel}?`,
+            "Delete Slot",
+            "ph-trash"
+          );
+          if (confirmed) {
+            slots.splice(clickedSlotIndex, 1);
+            saveLayout();
+            updateStats();
+            showToast(`Deleted Slot ${slotLabel}`, "success");
+          }
+        }
+      });
+
+      function toggleDrawingMode() {
+        isDrawing = !isDrawing;
+        const btn = document.getElementById("add-slot-btn");
+        if (isDrawing) {
+          btn.classList.add("active-mode");
+          btn.innerHTML = `<i class="ph-bold ph-pencil-simple"></i> <span>Click 4 Points</span>`;
+          tempPoints = [];
+          canvas.style.cursor = "crosshair";
+        } else {
+          btn.classList.remove("active-mode");
+          btn.innerHTML = `<i class="ph-bold ph-plus"></i> <span>Add Slot</span>`;
+          tempPoints = [];
+          canvas.style.cursor = "default";
+        }
+      }
+
+      function finalizeSlot() {
+        const count = slots.length;
+        const letter = String.fromCharCode(65 + Math.floor(count / 5));
+        const number = (count % 5) + 1;
+        const label = `${letter}${number}`;
+
+        slots.push({
+          id: count + 1,
+          points: [...tempPoints],
+          label: label,
+          occupied: false,
+          entryTime: null,
+          tempEntryTime: null, // Initialize timer property
+        });
+
+        showToast(`Slot ${label} Created`, "success");
+        toggleDrawingMode();
+        saveLayout();
+        updateStats();
+      }
+
+      // --- UTILITIES & STORAGE ---
+
+      function saveLayout() {
+        localStorage.setItem("parkSenseLayout", JSON.stringify(slots));
+      }
+
+      function loadLayout() {
+        const saved = localStorage.getItem("parkSenseLayout");
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            parsed.forEach((s) => {
+              s.occupied = false;
+              s.entryTime = null;
+              s.tempEntryTime = null; // Reset timer on load
+            });
+            slots = parsed;
+            updateStats();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+
+      async function triggerLoadLayout() {
+        const confirmed = await showConfirmModal(
+          "Load layout file? Current map will be lost.",
+          "Load Layout",
+          "ph-upload-simple"
+        );
+        if (confirmed) document.getElementById("layout-loader").click();
+      }
+
+      function importLayoutFile(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          try {
+            const obj = JSON.parse(event.target.result);
+            if (Array.isArray(obj)) {
+              obj.forEach((s) => {
+                s.occupied = false;
+                s.entryTime = null;
+                s.tempEntryTime = null; // Reset timer on import
+              });
+              slots = obj;
+              saveLayout();
+              updateStats();
+              showToast(`Loaded ${slots.length} slots`, "success");
+            }
+          } catch (e) {
+            showToast("Invalid file", "error");
+          }
+        };
+        reader.readAsText(file);
+        input.value = "";
+      }
+
+      async function exportLayout() {
+        if (slots.length === 0) {
+          showToast("No slots to save!", "error");
+          return;
+        }
+        const jsonString = JSON.stringify(slots, null, 2);
+        const dataStr =
+          "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
+        const downloadAnchorNode = document.createElement("a");
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "parking_layout.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        showToast("Layout saved", "success");
+      }
+
+      async function resetMap() {
+        const confirmed = await showConfirmModal(
+          "Clear entire map? Irreversible.",
+          "Clear Map",
+          "ph-eraser"
+        );
+        if (confirmed) {
+          slots = [];
+          tempPoints = [];
+          isDrawing = false;
+          saveLayout();
+          updateStats();
+          showToast("Map Cleared", "success");
+        }
       }
 
       function formatDuration(sec) {
@@ -997,13 +2034,25 @@
       function drawOverlays() {
         slots.forEach((slot) => {
           ctx.lineWidth = 3;
+          const isHovered = slot === hoveredSlot;
+          const isDragging = slot === draggingSlot;
 
           if (slot.occupied) {
             ctx.strokeStyle = "#ef4444";
             ctx.fillStyle = "rgba(239, 68, 68, 0.25)";
           } else {
-            ctx.strokeStyle = "#10b981";
-            ctx.fillStyle = "rgba(16, 185, 129, 0.1)";
+            ctx.strokeStyle = isHovered || isDragging ? "#34d399" : "#10b981";
+            ctx.fillStyle =
+              isHovered || isDragging
+                ? "rgba(16, 185, 129, 0.3)"
+                : "rgba(16, 185, 129, 0.15)";
+          }
+
+          if (isDragging) {
+            ctx.lineWidth = 4;
+            ctx.setLineDash([5, 5]);
+          } else {
+            ctx.setLineDash([]);
           }
 
           ctx.beginPath();
@@ -1012,24 +2061,28 @@
           ctx.lineTo(slot.points[2].x, slot.points[2].y);
           ctx.lineTo(slot.points[3].x, slot.points[3].y);
           ctx.closePath();
-
           ctx.fill();
           ctx.stroke();
+          ctx.setLineDash([]);
 
           const centerX = (slot.points[0].x + slot.points[2].x) / 2;
           const centerY = (slot.points[0].y + slot.points[2].y) / 2;
 
           ctx.fillStyle = "#fff";
-          ctx.shadowColor = "black";
+          ctx.shadowColor = "rgba(0,0,0,0.8)";
           ctx.shadowBlur = 4;
           ctx.font = "bold 16px Inter";
-          ctx.fillText(`${slot.label}`, centerX - 10, centerY);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(`${slot.label}`, centerX, centerY);
           ctx.shadowBlur = 0;
+          ctx.textAlign = "start";
+          ctx.textBaseline = "alphabetic";
         });
 
         if (isDrawing && tempPoints.length > 0) {
           ctx.strokeStyle = "#f59e0b";
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.moveTo(tempPoints[0].x, tempPoints[0].y);
           for (let i = 1; i < tempPoints.length; i++) {
@@ -1056,61 +2109,8 @@
 
       function addLog(msg) {
         const now = new Date();
-        const entry = document.createElement("div");
-        entry.className = "log-entry";
-        entry.innerHTML = `<span style="color:var(--primary)">${now.toLocaleTimeString()}</span> ${msg}`;
-        logBox.prepend(entry);
-      }
-
-      async function saveToDatabase(
-        slot,
-        entryTime,
-        exitTime,
-        durationSec,
-        payment
-      ) {
-        const cleanPayment = parseFloat(payment).toFixed(2);
-
-        const data = {
-          slot: slot,
-          entry_time: entryTime.toISOString(),
-          exit_time: exitTime.toISOString(),
-          duration_sec: durationSec,
-          payment: cleanPayment,
-        };
-        try {
-          const response = await fetch("save_parking.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
-          const result = await response.json();
-          if (result.status === "success") {
-            addLog(`Saved to DB: Slot ${slot} | ₱${cleanPayment}`);
-          } else {
-            addLog(`DB Error: ${result.message}`);
-          }
-        } catch (err) {
-          addLog(`Network error: ${err.message}`);
-        }
-      }
-
-      function openSpecificTicket(ticketData) {
-        ticketData.payment = parseFloat(ticketData.payment).toFixed(2);
-        localStorage.setItem("latestParking", JSON.stringify(ticketData));
-        window.open(
-          "ticket.html",
-          "ParkingTicket",
-          "width=400,height=600,scrollbars=yes,resizable=yes"
-        );
-      }
-
-      function openLatestTicket() {
-        if (!latestParking || !latestParking.slot) {
-          alert("No recent parking data to show.");
-          return;
-        }
-        openSpecificTicket(latestParking);
+        const timeStr = now.toLocaleTimeString("en-US", { hour12: false });
+        console.log(`[ParkSense ${timeStr}] ${msg}`);
       }
 
       function addHistoryRow(
@@ -1118,22 +2118,22 @@
         entryDate,
         exitDate,
         durationStr,
-        payment // "35.00"
+        payment,
+        rawEntryTime // <--- NEW PARAMETER
       ) {
         const entryStr = entryDate.toLocaleTimeString("en-PH", {
           hour: "2-digit",
           minute: "2-digit",
-          second: "2-digit",
           hour12: false,
-          timeZone: "Asia/Manila",
         });
         const exitStr = exitDate.toLocaleTimeString("en-PH", {
           hour: "2-digit",
           minute: "2-digit",
-          second: "2-digit",
           hour12: false,
-          timeZone: "Asia/Manila",
         });
+
+        // If rawEntryTime wasn't passed (live session), use ISO
+        const validRawTime = rawEntryTime || entryDate.toISOString();
 
         const paymentDisplay = parseFloat(payment).toFixed(2);
 
@@ -1144,244 +2144,172 @@
           duration: durationStr,
           payment: paymentDisplay,
         };
-
         const dataString = JSON.stringify(rowObj).replace(/"/g, "&quot;");
-        const isoEntryTime = entryDate.toISOString();
-
-        historyData.push(rowObj);
-        latestParking = rowObj;
 
         const tr = document.createElement("tr");
-
         tr.innerHTML = `
-            <td><strong>${slotLabel}</strong></td>
-            <td>${entryStr}</td>
-            <td>${exitStr}</td>
+            <td class="font-mono" style="font-weight: 700; color: var(--primary)">${slotLabel}</td>
+            <td class="font-mono">${entryStr}</td>
+            <td class="font-mono">${exitStr}</td>
             <td>${durationStr}</td>
-            <td style="color:var(--success);font-weight:bold">₱${paymentDisplay}</td>
+            <td class="font-mono" style="color:var(--success);">₱${paymentDisplay}</td>
             <td>
-               <div style="display: flex; gap: 10px; align-items: center;">
-                  <button class="btn-icon" onclick="openSpecificTicket(${dataString})" title="View Ticket">
-                      <i class="ph ph-receipt"></i>
-                  </button>
-
-                  <button class="btn-icon delete" 
-                      onclick="deleteHistoryRow(this, '${slotLabel}', '${isoEntryTime}')"
-                      title="Delete">
-                      <i class="ph ph-trash"></i>
-                  </button>
-               </div>
-            </td>
-        `;
-
+                <div class="action-cell" style="justify-content: flex-end">
+                    <button class="icon-btn" onclick="openSpecificTicket(${dataString})" title="View Ticket"><i class="ph-bold ph-receipt"></i></button>
+                    <!-- Pass the validRawTime to delete function -->
+                    <button class="icon-btn delete" onclick="deleteHistoryRow(this, '${slotLabel}', '${validRawTime}')" title="Delete"><i class="ph-bold ph-trash"></i></button>
+                </div>
+            </td>`;
         historyBody.prepend(tr);
       }
 
       async function deleteHistoryRow(button, slot, entryTime) {
         const confirmed = await showConfirmModal(
-          `Are you sure you want to permanently delete the record for Slot ${slot}?`
+          `Delete record for Slot ${slot}?`,
+          "Delete Record",
+          "ph-trash"
         );
-
         if (!confirmed) return;
 
+        // --- START NEW DB DELETE LOGIC ---
         try {
-          const res = await fetch("delete_parking.php", {
+          const response = await fetch("delete_parking.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ slot, entry_time: entryTime }),
+            body: JSON.stringify({
+              slot: slot,
+              entry_time: entryTime,
+            }),
           });
-          const result = await res.json();
+          const result = await response.json();
 
-          if (result.status === "success") {
-            const row = button.closest("tr");
-            row.remove();
-
-            // --- SYNC WITH REVENUE TABLE (New Logic) ---
-            const revRows = document.querySelectorAll("#revenue-body tr");
-            revRows.forEach((r) => {
-              // Check hidden data attributes
-              if (r.dataset.slot === slot && r.dataset.entry === entryTime) {
-                // Extract amount to update total
-                const amountText = r.children[2].innerText.replace("₱", "");
-                const amount = parseFloat(amountText);
-
-                if (!isNaN(amount)) {
-                  revenueTotal -= amount;
-                  totalRevenueEl.innerText = revenueTotal.toFixed(2);
-                }
-                r.remove();
-              }
-            });
-
-            addLog(`Deleted record: Slot ${slot}`);
-          } else {
-            alert("Failed to delete: " + result.message);
+          if (result.status !== "success") {
+            showToast(
+              "DB Delete Failed: " + (result.message || "Unknown error"),
+              "error"
+            );
+            return; // Stop if DB delete failed
           }
-        } catch (err) {
-          alert("Network error: " + err.message);
+
+          showToast("Record Deleted", "success");
+        } catch (error) {
+          console.error(error);
+          showToast("Connection Error", "error");
+          return;
         }
+        // --- END NEW DB DELETE LOGIC ---
+
+        // UI Updates (Only runs if DB delete was successful)
+        const amountText = button
+          .closest("tr")
+          .children[4].innerText.replace("₱", "");
+        const amount = parseFloat(amountText);
+        if (!isNaN(amount)) {
+          revenueTotal -= amount;
+          document.getElementById("total-revenue").innerText =
+            revenueTotal.toFixed(2);
+        }
+
+        button.closest("tr").remove();
+
+        // Remove from Revenue table as well
+        // Note: This matches based on the exact string passed to dataset
+        // If formats differ slightly between history and revenue, this might miss,
+        // but generally works if passed consistently.
+        const revRows = document.querySelectorAll("#revenue-body tr");
+        revRows.forEach((r) => {
+          // Simple check, or strict check if you add dataset attributes to rows
+          if (r.innerText.includes(slot) && r.innerText.includes(amountText)) {
+            r.remove();
+          }
+        });
       }
 
-      // UPDATED FUNCTION: now accepts matching entryTime
       function addRevenueRow(slot, payment, isoEntryTime) {
         revenueTotal += parseFloat(payment);
         totalRevenueEl.innerText = revenueTotal.toFixed(2);
         transactionCount++;
 
         const tr = document.createElement("tr");
-
-        // Add ID attributes so we can find it later for deletion
         tr.dataset.slot = slot;
         tr.dataset.entry = isoEntryTime;
-
         tr.innerHTML = `
-        <td>#${transactionCount.toString().padStart(4, "0")}</td>
-        <td>${slot}</td>
-        <td style="color:var(--success)">₱${parseFloat(payment).toFixed(2)}</td>
-    `;
+        <td class="font-mono" style="color:var(--text-muted)">#${transactionCount
+          .toString()
+          .padStart(4, "0")}</td>
+        <td class="font-mono"><strong>${slot}</strong></td>
+        <td class="font-mono" style="color:var(--success)">₱${parseFloat(
+          payment
+        ).toFixed(2)}</td>
+        `;
         revenueBody.prepend(tr);
-        revenueData.push({ slot, payment });
       }
 
       function openGraphs() {
         localStorage.setItem("allHistory", JSON.stringify(historyData));
         localStorage.setItem("allRevenue", JSON.stringify(revenueData));
-        window.open("graphs.html", "_blank");
+        window.location.href = "graphs.html";
       }
 
       async function loadExistingData() {
         try {
-          const histRes = await fetch("get_history.php");
-          const history = await histRes.json();
-          const revRes = await fetch("get_revenue.php");
-          const revData = await revRes.json();
+          const response = await fetch("get_history.php");
+          const data = await response.json();
 
+          // Clear current tables
           historyBody.innerHTML = "";
           revenueBody.innerHTML = "";
-
-          revenueTotal = parseFloat(revData.total) || 0;
-          totalRevenueEl.innerText = revenueTotal.toFixed(2);
+          revenueTotal = 0;
           transactionCount = 0;
 
-          history.forEach((entry) => {
+          // If no data or error
+          if (!Array.isArray(data)) {
+            console.log("No data found or invalid format");
+            return;
+          }
+
+          // Process the data from DB
+          data.forEach((entry) => {
+            // PHP sends Date strings (e.g., "2023-11-24 10:00:00")
+            // We need to convert them to JS Date objects for formatting
             const entryTime = new Date(entry.entry_time);
             const exitTime = new Date(entry.exit_time);
-            const durationSec = entry.duration_sec;
+
+            const durationSec = parseInt(entry.duration_sec);
             const durationStr = formatDuration(durationSec);
             const paymentFixed = parseFloat(entry.payment).toFixed(2);
 
-            // Need strictly ISO for ID matching
-            const isoEntry = entryTime.toISOString();
+            // ISO string is needed for the Delete logic later
+            // Note: entry.entry_time from PHP is usually sufficient,
+            // but we ensure consistency here.
+            const isoEntry = entry.entry_time;
 
-            const rowData = {
-              slot: entry.slot,
-              entry: entryTime.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              exit: exitTime.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              duration: durationStr,
-              payment: paymentFixed,
-            };
+            // Add to UI
+            addHistoryRow(
+              entry.slot,
+              entryTime,
+              exitTime,
+              durationStr,
+              paymentFixed,
+              isoEntry // Pass the raw DB string for deletion accuracy
+            );
 
-            const dataString = JSON.stringify(rowData).replace(/"/g, "&quot;");
-
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td><strong>${entry.slot}</strong></td>
-                <td>${rowData.entry}</td>
-                <td>${rowData.exit}</td>
-                <td>${durationStr}</td>
-                <td style="color:var(--success);font-weight:bold">₱${paymentFixed}</td>
-                <td>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <button class="btn-icon" onclick="openSpecificTicket(${dataString})" title="View Ticket">
-                            <i class="ph ph-receipt"></i>
-                        </button>
-
-                        <button class="btn-icon delete"
-                            onclick="deleteHistoryRow(this, '${entry.slot}', '${entry.entry_time}')"
-                            title="Delete">
-                            <i class="ph ph-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            `;
-            historyBody.appendChild(tr);
-
-            // Populate Revenue Table with ID links
-            transactionCount++;
-            const revTr = document.createElement("tr");
-            revTr.dataset.slot = entry.slot;
-            revTr.dataset.entry = entry.entry_time; // Matches DB Format string
-
-            revTr.innerHTML = `
-                <td>#${transactionCount.toString().padStart(4, "0")}</td>
-                <td>${entry.slot}</td>
-                <td style="color:var(--success)">₱${paymentFixed}</td>
-            `;
-            revenueBody.appendChild(revTr);
-
-            historyData.push(rowData);
-            revenueData.push({
-              slot: entry.slot,
-              payment: parseFloat(entry.payment),
-            });
+            addRevenueRow(entry.slot, paymentFixed, isoEntry);
           });
 
-          addLog(`Loaded ${history.length} records from database`);
-        } catch (err) {
-          addLog("Failed to load data from server");
-          console.error(err);
+          // Update Total Revenue UI
+          document.getElementById("total-revenue").innerText =
+            revenueTotal.toFixed(2);
+        } catch (error) {
+          console.error("Error loading data:", error);
+          showToast("Failed to connect to Database", "error");
         }
       }
 
-      // --- Custom Modal Logic ---
-      let modalResolve = null;
-
-      function showConfirmModal(message, title = "Confirm Deletion") {
-        const modal = document.getElementById("confirm-modal");
-        const msgEl = document.getElementById("modal-msg");
-        const titleEl = document.getElementById("modal-title");
-
-        msgEl.innerText = message;
-        titleEl.innerText = title;
-        modal.style.display = "flex";
-
-        return new Promise((resolve) => {
-          modalResolve = resolve;
-        });
-      }
-
-      function closeModal(isConfirmed) {
-        document.getElementById("confirm-modal").style.display = "none";
-        if (modalResolve) {
-          modalResolve(isConfirmed);
-          modalResolve = null;
-        }
-      }
-
+      // Initialize
       startCamera();
       loadLayout();
       loadExistingData();
     </script>
-    <div id="confirm-modal" class="modal-overlay">
-      <div class="modal-box">
-        <div class="modal-icon">
-          <i class="ph-fill ph-trash"></i>
-        </div>
-        <h3 id="modal-title">Confirm Deletion</h3>
-        <p id="modal-msg">Are you sure you want to remove this record?</p>
-        <div class="modal-actions">
-          <button class="btn-cancel" onclick="closeModal(false)">Cancel</button>
-          <button class="btn-danger-solid" onclick="closeModal(true)">
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
   </body>
 </html>

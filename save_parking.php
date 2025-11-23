@@ -1,35 +1,19 @@
 <?php
 header('Content-Type: application/json');
-include 'db.php';
+include 'db_connect.php';
 
-// Get POST data
-$data = json_decode(file_get_contents('php://input'), true);
+$data = json_decode(file_get_contents("php://input"), true);
 
-if (!$data) {
-    echo json_encode(['status' => 'error', 'message' => 'No data received']);
-    exit;
+if (isset($data['slot'])) {
+    $stmt = $conn->prepare("INSERT INTO parking_logs (slot_label, entry_time, exit_time, duration_sec, payment) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssids", $data['slot'], $data['entry_time'], $data['exit_time'], $data['duration_sec'], $data['payment']);
+
+    if ($stmt->execute()) {
+        echo json_encode(["status" => "success", "id" => $conn->insert_id]);
+    } else {
+        echo json_encode(["status" => "error", "message" => $conn->error]);
+    }
+    $stmt->close();
 }
-
-$slot = $conn->real_escape_string($data['slot']);
-
-// FIX: Convert JS ISO Date (2023-11-23T...) to MySQL Date (2023-11-23 ...)
-$entry_time = date("Y-m-d H:i:s", strtotime($data['entry_time']));
-$exit_time = date("Y-m-d H:i:s", strtotime($data['exit_time']));
-
-$duration_sec = (int) $data['duration_sec'];
-$payment = (float) $data['payment']; // Use float for money
-
-$sql = "INSERT INTO parking_history (slot, entry_time, exit_time, duration_sec, payment)
-        VALUES ('$slot','$entry_time','$exit_time',$duration_sec,$payment)";
-
-error_log("SQL: $sql"); // Add this to debug
-
-if ($conn->query($sql)) {
-    echo json_encode(['status' => 'success']);
-} else {
-    echo json_encode(['status' => 'error', 'message' => $conn->error]);
-}
-
-
 $conn->close();
 ?>
