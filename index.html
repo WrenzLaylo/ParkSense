@@ -770,21 +770,51 @@
         }
       }
 
-      function exportLayout() {
+      // --- MODIFIED EXPORT FUNCTION: Ask for destination ---
+      async function exportLayout() {
         if (slots.length === 0) {
           alert("No slots to save!");
           return;
         }
-        const dataStr =
-          "data:text/json;charset=utf-8," +
-          encodeURIComponent(JSON.stringify(slots));
-        const downloadAnchorNode = document.createElement("a");
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "parking_layout.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-        addLog("Layout saved to file.");
+
+        // Pretty print JSON
+        const jsonString = JSON.stringify(slots, null, 2);
+
+        // Check if browser supports the "Save As" picker (Chrome, Edge, Opera)
+        if (window.showSaveFilePicker) {
+          try {
+            const handle = await window.showSaveFilePicker({
+              suggestedName: "parking_layout.json",
+              types: [
+                {
+                  description: "JSON Files",
+                  accept: { "application/json": [".json"] },
+                },
+              ],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(jsonString);
+            await writable.close();
+            addLog("Layout saved successfully.");
+          } catch (err) {
+            if (err.name !== "AbortError") {
+              console.error(err);
+              addLog("Failed to save layout.");
+            }
+          }
+        } else {
+          // Fallback for browsers that don't support the API (Firefox/Safari)
+          // They will rely on the user's browser settings for "Ask where to save"
+          const dataStr =
+            "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
+          const downloadAnchorNode = document.createElement("a");
+          downloadAnchorNode.setAttribute("href", dataStr);
+          downloadAnchorNode.setAttribute("download", "parking_layout.json");
+          document.body.appendChild(downloadAnchorNode);
+          downloadAnchorNode.click();
+          downloadAnchorNode.remove();
+          addLog("Layout saved (Check Downloads folder).");
+        }
       }
 
       async function triggerLoadLayout() {
