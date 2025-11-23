@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parking Receipt - ParkSense</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+      :root {
+        --bg-body: #0f172a;
+        --bg-card: #1e293b;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+        --border: #334155;
+        --success: #10b981;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+
+      .ticket-container {
+        background: var(--bg-card);
+        width: 100%;
+        max-width: 380px;
+        border-radius: 16px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--border);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .ticket-top {
+        height: 8px;
+        background: var(--primary);
+        width: 100%;
+      }
+
+      .content {
+        padding: 30px;
+        text-align: center;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 5px;
+      }
+
+      .receipt-label {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+      }
+
+      .divider {
+        border-bottom: 2px dashed var(--border);
+        margin: 20px 0;
+        position: relative;
+      }
+
+      .divider::before,
+      .divider::after {
+        content: "";
+        position: absolute;
+        top: -10px;
+        width: 20px;
+        height: 20px;
+        background: var(--bg-body);
+        border-radius: 50%;
+      }
+      .divider::before {
+        left: -40px;
+      }
+      .divider::after {
+        right: -40px;
+      }
+
+      .price-section {
+        margin: 20px 0;
+      }
+      .price-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+      .price-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--success);
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        text-align: left;
+        margin-bottom: 25px;
+      }
+
+      .info-item label {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+      .info-item span {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--text-main);
+      }
+
+      .qr-wrapper {
+        background: white;
+        padding: 15px;
+        border-radius: 12px;
+        display: inline-block;
+        margin-bottom: 20px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      button {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: 0.2s;
+        font-family: "Inter", sans-serif;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+      .btn-primary:hover {
+        background: var(--primary-hover);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+      }
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-main);
+      }
+
+      .btn-danger {
+        background: #ef4444; /* Red */
+        color: white;
+      }
+      .btn-danger:hover {
+        background: #b91c1c; /* Darker red on hover */
+      }
+
+      @media print {
+        body {
+          background: white;
+        }
+        .ticket-container {
+          box-shadow: none;
+          border: 1px solid #000;
+        }
+        .actions {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ticket-container">
+      <div class="ticket-top"></div>
+
+      <div class="content">
+        <div class="brand">
+          <i class="ph-fill ph-car-profile" style="color: var(--primary)"></i>
+          ParkSense
+        </div>
+        <div class="receipt-label">Official Parking Receipt</div>
+
+        <div class="price-section">
+          <div class="price-value">₱<span id="payment">0.00</span></div>
+          <div class="price-label">Total Amount Paid</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Slot Number</label>
+            <span id="slot">-</span>
+          </div>
+          <div class="info-item">
+            <label>Duration</label>
+            <span id="duration">00:00:00</span>
+          </div>
+          <div class="info-item">
+            <label>Entry Time</label>
+            <span id="entry">-</span>
+          </div>
+          <div class="info-item">
+            <label>Exit Time</label>
+            <span id="exit">-</span>
+          </div>
+        </div>
+
+        <div class="qr-wrapper">
+          <div id="qrcode"></div>
+        </div>
+
+        <div
+          style="
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+          "
+        >
+          Scan to verify validation
+        </div>
+
+        <div class="actions">
+          <button class="btn-secondary" onclick="window.print()">
+            <i class="ph ph-printer"></i> Print
+          </button>
+          <button class="btn-danger" onclick="closeWindow()">
+            <i class="ph ph-x"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+      // Load latest parking info from localStorage
+      const latest = JSON.parse(localStorage.getItem("latestParking")) || {};
+
+      document.getElementById("slot").innerText = latest.slot || "-";
+      document.getElementById("entry").innerText = latest.entry || "-";
+      document.getElementById("exit").innerText = latest.exit || "-";
+      document.getElementById("duration").innerText =
+        latest.duration || "00:00:00";
+      document.getElementById("payment").innerText = latest.payment || "0";
+
+      // Generate QR code
+      const qrcode = new QRCode(document.getElementById("qrcode"), {
+        text: JSON.stringify(latest),
+        width: 128,
+        height: 128,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+
+      function closeWindow() {
+        window.close(); // Will only work if the tab was opened via JS
+      }
+    </script>
+  </body>
+</html>

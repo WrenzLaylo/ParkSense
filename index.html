@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ParkSense Dashboard - Synced Data</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+      :root {
+        --bg-body: #0f172a;
+        --bg-card: #1e293b;
+        --bg-card-hover: #334155;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+        --success: #10b981;
+        --danger: #ef4444;
+        --border: #334155;
+        --warning: #f59e0b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        margin: 0;
+        padding: 20px;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Layout Grid */
+      .app-container {
+        display: grid;
+        grid-template-columns: 2fr 1.2fr;
+        gap: 20px;
+        height: calc(100vh - 40px);
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+
+      /* Header */
+      .header {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary);
+      }
+
+      /* Left Column: Camera */
+      .camera-section {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .video-wrapper {
+        position: relative;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border);
+        aspect-ratio: 4/3;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: crosshair;
+      }
+
+      video {
+        display: none;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .controls-bar {
+        display: flex;
+        gap: 10px;
+        padding: 15px;
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        font-family: inherit;
+        font-weight: 500;
+        font-size: 0.9rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: var(--bg-card-hover);
+        color: var(--text-main);
+      }
+
+      button:hover {
+        background: var(--border);
+      }
+
+      button.primary {
+        background: var(--primary);
+        color: white;
+      }
+      button.primary:hover {
+        background: var(--primary-hover);
+      }
+
+      button.action-btn {
+        background: var(--warning);
+        color: #000;
+      }
+      button.action-btn:hover {
+        background: #d97706;
+      }
+
+      button.active-mode {
+        background: var(--success);
+        color: #fff;
+        animation: pulse 1.5s infinite;
+      }
+
+      /* Utility buttons (secondary) */
+      button.secondary {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+      button.secondary:hover {
+        color: var(--text-main);
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .btn-icon {
+        padding: 6px;
+        font-size: 1.1rem;
+        background: transparent;
+        color: var(--primary);
+      }
+      .btn-icon:hover {
+        background: rgba(59, 130, 246, 0.2);
+      }
+
+      /* Right Column: Data */
+      .data-section {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      /* Stat Cards */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .stat-card {
+        background: var(--bg-card);
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        text-align: center;
+      }
+
+      .stat-card h3 {
+        margin: 0;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+      }
+
+      .stat-card p {
+        margin: 5px 0 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+      }
+
+      .text-green {
+        color: var(--success);
+      }
+      .text-red {
+        color: var(--danger);
+      }
+
+      /* Tabbed Panel */
+      .tab-panel {
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .tabs-header {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .tab-btn {
+        flex: 1;
+        padding: 15px;
+        background: transparent;
+        color: var(--text-muted);
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        font-weight: 600;
+        transition: 0.2s;
+        border-radius: 0;
+      }
+
+      .tab-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-main);
+      }
+
+      .tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        background: rgba(59, 130, 246, 0.1);
+      }
+
+      .tab-content {
+        display: none;
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      /* Tables */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+
+      thead {
+        position: sticky;
+        top: 0;
+        background: var(--bg-card);
+        z-index: 10;
+        box-shadow: 0 1px 0 var(--border);
+      }
+
+      th {
+        text-align: left;
+        padding: 12px 15px;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      td {
+        padding: 10px 15px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      /* Logs */
+      .log-container {
+        height: 150px;
+        background: #111;
+        border-radius: 8px;
+        padding: 10px;
+        font-family: "Courier New", monospace;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        margin-top: auto;
+      }
+
+      .log-entry {
+        margin-bottom: 4px;
+        border-bottom: 1px dashed #333;
+        padding-bottom: 2px;
+      }
+
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+
+      .btn-icon.delete {
+        color: var(--danger);
+      }
+      .btn-icon.delete:hover {
+        background: rgba(239, 68, 68, 0.2);
+      }
+
+      /* Modal Overlay */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modal-box {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        padding: 30px;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 350px;
+        text-align: center;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        animation: popIn 0.2s ease-out;
+      }
+
+      @keyframes popIn {
+        from {
+          transform: scale(0.9);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .modal-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        margin: 0 auto 15px auto;
+      }
+
+      .modal-box h3 {
+        margin: 0 0 10px 0;
+        color: var(--text-main);
+      }
+      .modal-box p {
+        margin: 0 0 25px 0;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        width: 100%;
+      }
+
+      .modal-actions button {
+        justify-content: center;
+        flex: 1;
+      }
+
+      .btn-cancel {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-main);
+      }
+      .btn-cancel:hover {
+        background: var(--bg-card-hover);
+      }
+
+      .btn-danger-solid {
+        background: var(--danger);
+        color: white;
+        border: none;
+      }
+      .btn-danger-solid:hover {
+        background: #dc2626;
+      }
+
+      @media (max-width: 1000px) {
+        .app-container {
+          grid-template-columns: 1fr;
+          height: auto;
+          overflow-y: auto;
+        }
+        body {
+          height: auto;
+          overflow-y: auto;
+        }
+        .data-section {
+          height: 500px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <div class="header">
+        <div class="brand">
+          <i class="ph-fill ph-car-profile"></i> ParkSense AI
+        </div>
+        <div style="font-size: 0.9rem; color: var(--text-muted)">
+          System Status: <span style="color: var(--success)">● Online</span>
+        </div>
+      </div>
+
+      <div class="camera-section">
+        <div class="video-wrapper">
+          <video
+            id="webcam"
+            autoplay
+            playsinline
+            width="640"
+            height="480"
+          ></video>
+          <canvas id="overlay"></canvas>
+        </div>
+
+        <div class="controls-bar">
+          <button
+            id="add-slot-btn"
+            class="action-btn"
+            onclick="toggleDrawingMode()"
+          >
+            <i class="ph ph-plus-circle"></i> Add Slot
+          </button>
+
+          <button onclick="resetMap()">
+            <i class="ph ph-eraser"></i> Clear
+          </button>
+
+          <input
+            type="file"
+            id="layout-loader"
+            style="display: none"
+            accept=".json"
+            onchange="importLayoutFile(this)"
+          />
+
+          <button class="secondary" onclick="exportLayout()">
+            <i class="ph ph-download-simple"></i> Save Layout
+          </button>
+          <button class="secondary" onclick="triggerLoadLayout()">
+            <i class="ph ph-upload-simple"></i> Load Layout
+          </button>
+
+          <div
+            style="
+              width: 1px;
+              background: var(--border);
+              margin: 0 10px;
+              height: 30px;
+            "
+          ></div>
+
+          <button class="primary" onclick="captureBackground()">
+            <i class="ph ph-aperture"></i> Calibrate
+          </button>
+          <button onclick="openLatestTicket()">
+            <i class="ph ph-ticket"></i> Last Ticket
+          </button>
+          <button onclick="openGraphs()">
+            <i class="ph ph-chart-line-up"></i> Analytics
+          </button>
+        </div>
+
+        <div class="log-container" id="log-box">
+          <div class="log-entry">System initialized. Waiting for camera...</div>
+        </div>
+      </div>
+
+      <div class="data-section">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Slots</h3>
+            <p id="total-count">0</p>
+          </div>
+          <div
+            class="stat-card"
+            style="border-bottom: 2px solid var(--success)"
+          >
+            <h3>Available</h3>
+            <p id="free-count" class="text-green">0</p>
+          </div>
+          <div class="stat-card" style="border-bottom: 2px solid var(--danger)">
+            <h3>Occupied</h3>
+            <p id="occupied-count" class="text-red">0</p>
+          </div>
+        </div>
+
+        <div class="tab-panel">
+          <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab('history')">
+              <i class="ph ph-clock-counter-clockwise"></i> Activity History
+            </button>
+            <button class="tab-btn" onclick="switchTab('revenue')">
+              <i class="ph ph-currency-circle-dollar"></i> Revenue
+            </button>
+          </div>
+
+          <div id="history" class="tab-content active">
+            <table>
+              <thead>
+                <tr>
+                  <th>Slot</th>
+                  <th>Entry</th>
+                  <th>Exit</th>
+                  <th>Time</th>
+                  <th>Fee</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="history-body"></tbody>
+            </table>
+          </div>
+
+          <div id="revenue" class="tab-content">
+            <div
+              style="
+                padding: 15px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid var(--border);
+              "
+            >
+              <span style="color: var(--text-muted)">Total Earnings</span>
+              <span
+                style="
+                  font-size: 1.2rem;
+                  font-weight: bold;
+                  color: var(--success);
+                "
+                >₱<span id="total-revenue">0.00</span></span
+              >
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Trans ID</th>
+                  <th>Slot</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody id="revenue-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // --- UI Logic ---
+      function switchTab(tabId) {
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((content) => content.classList.remove("active"));
+
+        document
+          .querySelector(`button[onclick="switchTab('${tabId}')"]`)
+          .classList.add("active");
+        document.getElementById(tabId).classList.add("active");
+      }
+
+      // --- ParkSense Logic ---
+      const video = document.getElementById("webcam");
+      const canvas = document.getElementById("overlay");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const logBox = document.getElementById("log-box");
+      const historyBody = document.getElementById("history-body");
+      const revenueBody = document.getElementById("revenue-body");
+      const totalRevenueEl = document.getElementById("total-revenue");
+
+      const PIXEL_DIFF_THRESHOLD = 30;
+      const COVERAGE_THRESHOLD = 0.15;
+      let backgroundPixels = null;
+      let isStreamReady = false;
+      let revenueTotal = 0;
+      let transactionCount = 0;
+
+      // --- CUSTOM LAYOUT VARIABLES ---
+      let slots = [];
+      let isDrawing = false;
+      let tempPoints = [];
+
+      let latestParking = {};
+      let historyData = [];
+      let revenueData = [];
+
+      async function startCamera() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 640, height: 480 },
+          });
+          video.srcObject = stream;
+          video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            isStreamReady = true;
+            addLog("Camera connected. Load Layout or Add Slots.");
+            requestAnimationFrame(processFrame);
+          };
+        } catch (err) {
+          addLog("Error accessing camera: " + err.message);
+        }
+      }
+
+      function captureBackground() {
+        if (!isStreamReady) return;
+        ctx.save();
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+
+        backgroundPixels = ctx.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        ).data;
+        addLog("Background calibrated. Detection Active.");
+      }
+
+      // --- MOUSE INPUT FOR DRAWING SLOTS ---
+      canvas.addEventListener("mousedown", (e) => {
+        if (!isDrawing) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        tempPoints.push({ x, y });
+
+        if (tempPoints.length === 4) {
+          finalizeSlot();
+        }
+      });
+
+      function toggleDrawingMode() {
+        isDrawing = !isDrawing;
+        const btn = document.getElementById("add-slot-btn");
+        if (isDrawing) {
+          btn.classList.add("active-mode");
+          btn.innerHTML = `<i class="ph ph-pencil-simple"></i> Click 4 Points`;
+          tempPoints = [];
+        } else {
+          btn.classList.remove("active-mode");
+          btn.innerHTML = `<i class="ph ph-plus-circle"></i> Add Slot`;
+          tempPoints = [];
+        }
+      }
+
+      function finalizeSlot() {
+        const count = slots.length;
+        const letter = String.fromCharCode(65 + Math.floor(count / 5)); // A, B, C...
+        const number = (count % 5) + 1;
+        const label = `${letter}${number}`;
+
+        slots.push({
+          id: count + 1,
+          points: [...tempPoints],
+          label: label,
+          occupied: false,
+          entryTime: null,
+        });
+
+        addLog(`Created Slot ${label}`);
+        tempPoints = [];
+        saveLayout();
+      }
+
+      // --- PERSISTENCE & FILE SYSTEM ---
+      function saveLayout() {
+        localStorage.setItem("parkSenseLayout", JSON.stringify(slots));
+      }
+
+      function loadLayout() {
+        const saved = localStorage.getItem("parkSenseLayout");
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            parsed.forEach((s) => {
+              s.occupied = false;
+              s.entryTime = null;
+            });
+            slots = parsed;
+            addLog(`Auto-loaded ${slots.length} slots from memory.`);
+            updateStats();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+
+      function exportLayout() {
+        if (slots.length === 0) {
+          alert("No slots to save!");
+          return;
+        }
+        const dataStr =
+          "data:text/json;charset=utf-8," +
+          encodeURIComponent(JSON.stringify(slots));
+        const downloadAnchorNode = document.createElement("a");
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "parking_layout.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        addLog("Layout saved to file.");
+      }
+
+      async function triggerLoadLayout() {
+        const confirmed = await showConfirmModal(
+          "If you load a layout file, your current layout will be gone. Are you sure?",
+          "Load Layout?"
+        );
+
+        if (confirmed) {
+          document.getElementById("layout-loader").click();
+        }
+      }
+
+      function importLayoutFile(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          try {
+            const obj = JSON.parse(event.target.result);
+            if (Array.isArray(obj)) {
+              obj.forEach((s) => {
+                s.occupied = false;
+                s.entryTime = null;
+              });
+              slots = obj;
+              saveLayout();
+              updateStats();
+              addLog(`Successfully loaded ${slots.length} slots from file.`);
+            } else {
+              alert("Invalid file format.");
+            }
+          } catch (e) {
+            alert("Error reading file: " + e.message);
+          }
+        };
+        reader.readAsText(file);
+        input.value = "";
+      }
+
+      async function resetMap() {
+        const confirmed = await showConfirmModal(
+          "Are you sure you want to clear the entire map? This cannot be undone.",
+          "Clear Map"
+        );
+
+        if (confirmed) {
+          slots = [];
+          tempPoints = [];
+          isDrawing = false;
+          document
+            .getElementById("add-slot-btn")
+            .classList.remove("active-mode");
+          document.getElementById(
+            "add-slot-btn"
+          ).innerHTML = `<i class="ph ph-plus-circle"></i> Add Slot`;
+          saveLayout();
+          addLog("Map cleared.");
+          updateStats();
+        }
+      }
+
+      function processFrame() {
+        if (isStreamReady) {
+          ctx.save();
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          ctx.restore();
+
+          if (backgroundPixels) detectOccupancy();
+          drawOverlays();
+          updateStats();
+        }
+        requestAnimationFrame(processFrame);
+      }
+
+      function detectOccupancy() {
+        if (slots.length === 0) return;
+
+        const currentPixels = ctx.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        ).data;
+
+        slots.forEach((slot) => {
+          let significantDiffPixels = 0;
+
+          // Bounding Box
+          const xs = slot.points.map((p) => p.x);
+          const ys = slot.points.map((p) => p.y);
+          const minX = Math.floor(Math.min(...xs));
+          const maxX = Math.ceil(Math.max(...xs));
+          const minY = Math.floor(Math.min(...ys));
+          const maxY = Math.ceil(Math.max(...ys));
+
+          const width = maxX - minX;
+          const height = maxY - minY;
+          const totalArea = width * height;
+
+          for (let y = minY; y < maxY; y += 4) {
+            for (let x = minX; x < maxX; x += 4) {
+              if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height)
+                continue;
+
+              const i = (y * canvas.width + x) * 4;
+              const rDiff = Math.abs(currentPixels[i] - backgroundPixels[i]);
+              const gDiff = Math.abs(
+                currentPixels[i + 1] - backgroundPixels[i + 1]
+              );
+              const bDiff = Math.abs(
+                currentPixels[i + 2] - backgroundPixels[i + 2]
+              );
+
+              if (rDiff + gDiff + bDiff > PIXEL_DIFF_THRESHOLD * 3) {
+                significantDiffPixels++;
+              }
+            }
+          }
+
+          const coverage = significantDiffPixels / (totalArea / 16);
+          const wasOccupied = slot.occupied;
+
+          if (!wasOccupied && coverage > COVERAGE_THRESHOLD) {
+            slot.occupied = true;
+            slot.entryTime = new Date();
+            addLog(`Entry: Slot ${slot.label}`);
+          } else if (wasOccupied && coverage < COVERAGE_THRESHOLD * 0.8) {
+            slot.occupied = false;
+            const exitTime = new Date();
+            const durationSec = Math.floor((exitTime - slot.entryTime) / 1000);
+
+            let paymentVal = 35;
+            if (durationSec > 10)
+              paymentVal += Math.ceil((durationSec - 10) / 5) * 5;
+
+            const paymentStr = paymentVal.toFixed(2);
+
+            addLog(`Exit: Slot ${slot.label} | ₱${paymentStr}`);
+
+            // UPDATED CALLS: Pass entryTime for ID matching
+            const isoEntry = slot.entryTime.toISOString();
+
+            addHistoryRow(
+              slot.label,
+              slot.entryTime,
+              exitTime,
+              formatDuration(durationSec),
+              paymentStr
+            );
+
+            addRevenueRow(slot.label, paymentStr, isoEntry);
+            saveToDatabase(
+              slot.label,
+              slot.entryTime,
+              exitTime,
+              durationSec,
+              paymentStr
+            );
+
+            slot.entryTime = null;
+          }
+        });
+      }
+
+      function formatDuration(sec) {
+        const h = Math.floor(sec / 3600)
+          .toString()
+          .padStart(2, "0");
+        const m = Math.floor((sec % 3600) / 60)
+          .toString()
+          .padStart(2, "0");
+        const s = (sec % 60).toString().padStart(2, "0");
+        return `${h}:${m}:${s}`;
+      }
+
+      function drawOverlays() {
+        slots.forEach((slot) => {
+          ctx.lineWidth = 3;
+
+          if (slot.occupied) {
+            ctx.strokeStyle = "#ef4444";
+            ctx.fillStyle = "rgba(239, 68, 68, 0.25)";
+          } else {
+            ctx.strokeStyle = "#10b981";
+            ctx.fillStyle = "rgba(16, 185, 129, 0.1)";
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(slot.points[0].x, slot.points[0].y);
+          ctx.lineTo(slot.points[1].x, slot.points[1].y);
+          ctx.lineTo(slot.points[2].x, slot.points[2].y);
+          ctx.lineTo(slot.points[3].x, slot.points[3].y);
+          ctx.closePath();
+
+          ctx.fill();
+          ctx.stroke();
+
+          const centerX = (slot.points[0].x + slot.points[2].x) / 2;
+          const centerY = (slot.points[0].y + slot.points[2].y) / 2;
+
+          ctx.fillStyle = "#fff";
+          ctx.shadowColor = "black";
+          ctx.shadowBlur = 4;
+          ctx.font = "bold 16px Inter";
+          ctx.fillText(`${slot.label}`, centerX - 10, centerY);
+          ctx.shadowBlur = 0;
+        });
+
+        if (isDrawing && tempPoints.length > 0) {
+          ctx.strokeStyle = "#f59e0b";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(tempPoints[0].x, tempPoints[0].y);
+          for (let i = 1; i < tempPoints.length; i++) {
+            ctx.lineTo(tempPoints[i].x, tempPoints[i].y);
+          }
+          ctx.stroke();
+
+          ctx.fillStyle = "#f59e0b";
+          tempPoints.forEach((p) => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+      }
+
+      function updateStats() {
+        const occupied = slots.filter((s) => s.occupied).length;
+        document.getElementById("total-count").innerText = slots.length;
+        document.getElementById("free-count").innerText =
+          slots.length - occupied;
+        document.getElementById("occupied-count").innerText = occupied;
+      }
+
+      function addLog(msg) {
+        const now = new Date();
+        const entry = document.createElement("div");
+        entry.className = "log-entry";
+        entry.innerHTML = `<span style="color:var(--primary)">${now.toLocaleTimeString()}</span> ${msg}`;
+        logBox.prepend(entry);
+      }
+
+      async function saveToDatabase(
+        slot,
+        entryTime,
+        exitTime,
+        durationSec,
+        payment
+      ) {
+        const cleanPayment = parseFloat(payment).toFixed(2);
+
+        const data = {
+          slot: slot,
+          entry_time: entryTime.toISOString(),
+          exit_time: exitTime.toISOString(),
+          duration_sec: durationSec,
+          payment: cleanPayment,
+        };
+        try {
+          const response = await fetch("save_parking.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const result = await response.json();
+          if (result.status === "success") {
+            addLog(`Saved to DB: Slot ${slot} | ₱${cleanPayment}`);
+          } else {
+            addLog(`DB Error: ${result.message}`);
+          }
+        } catch (err) {
+          addLog(`Network error: ${err.message}`);
+        }
+      }
+
+      function openSpecificTicket(ticketData) {
+        ticketData.payment = parseFloat(ticketData.payment).toFixed(2);
+        localStorage.setItem("latestParking", JSON.stringify(ticketData));
+        window.open(
+          "ticket.html",
+          "ParkingTicket",
+          "width=400,height=600,scrollbars=yes,resizable=yes"
+        );
+      }
+
+      function openLatestTicket() {
+        if (!latestParking || !latestParking.slot) {
+          alert("No recent parking data to show.");
+          return;
+        }
+        openSpecificTicket(latestParking);
+      }
+
+      function addHistoryRow(
+        slotLabel,
+        entryDate,
+        exitDate,
+        durationStr,
+        payment // "35.00"
+      ) {
+        const entryStr = entryDate.toLocaleTimeString("en-PH", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+          timeZone: "Asia/Manila",
+        });
+        const exitStr = exitDate.toLocaleTimeString("en-PH", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+          timeZone: "Asia/Manila",
+        });
+
+        const paymentDisplay = parseFloat(payment).toFixed(2);
+
+        const rowObj = {
+          slot: slotLabel,
+          entry: entryStr,
+          exit: exitStr,
+          duration: durationStr,
+          payment: paymentDisplay,
+        };
+
+        const dataString = JSON.stringify(rowObj).replace(/"/g, "&quot;");
+        const isoEntryTime = entryDate.toISOString();
+
+        historyData.push(rowObj);
+        latestParking = rowObj;
+
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td><strong>${slotLabel}</strong></td>
+            <td>${entryStr}</td>
+            <td>${exitStr}</td>
+            <td>${durationStr}</td>
+            <td style="color:var(--success);font-weight:bold">₱${paymentDisplay}</td>
+            <td>
+               <div style="display: flex; gap: 10px; align-items: center;">
+                  <button class="btn-icon" onclick="openSpecificTicket(${dataString})" title="View Ticket">
+                      <i class="ph ph-receipt"></i>
+                  </button>
+
+                  <button class="btn-icon delete" 
+                      onclick="deleteHistoryRow(this, '${slotLabel}', '${isoEntryTime}')"
+                      title="Delete">
+                      <i class="ph ph-trash"></i>
+                  </button>
+               </div>
+            </td>
+        `;
+
+        historyBody.prepend(tr);
+      }
+
+      async function deleteHistoryRow(button, slot, entryTime) {
+        const confirmed = await showConfirmModal(
+          `Are you sure you want to permanently delete the record for Slot ${slot}?`
+        );
+
+        if (!confirmed) return;
+
+        try {
+          const res = await fetch("delete_parking.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ slot, entry_time: entryTime }),
+          });
+          const result = await res.json();
+
+          if (result.status === "success") {
+            const row = button.closest("tr");
+            row.remove();
+
+            // --- SYNC WITH REVENUE TABLE (New Logic) ---
+            const revRows = document.querySelectorAll("#revenue-body tr");
+            revRows.forEach((r) => {
+              // Check hidden data attributes
+              if (r.dataset.slot === slot && r.dataset.entry === entryTime) {
+                // Extract amount to update total
+                const amountText = r.children[2].innerText.replace("₱", "");
+                const amount = parseFloat(amountText);
+
+                if (!isNaN(amount)) {
+                  revenueTotal -= amount;
+                  totalRevenueEl.innerText = revenueTotal.toFixed(2);
+                }
+                r.remove();
+              }
+            });
+
+            addLog(`Deleted record: Slot ${slot}`);
+          } else {
+            alert("Failed to delete: " + result.message);
+          }
+        } catch (err) {
+          alert("Network error: " + err.message);
+        }
+      }
+
+      // UPDATED FUNCTION: now accepts matching entryTime
+      function addRevenueRow(slot, payment, isoEntryTime) {
+        revenueTotal += parseFloat(payment);
+        totalRevenueEl.innerText = revenueTotal.toFixed(2);
+        transactionCount++;
+
+        const tr = document.createElement("tr");
+
+        // Add ID attributes so we can find it later for deletion
+        tr.dataset.slot = slot;
+        tr.dataset.entry = isoEntryTime;
+
+        tr.innerHTML = `
+        <td>#${transactionCount.toString().padStart(4, "0")}</td>
+        <td>${slot}</td>
+        <td style="color:var(--success)">₱${parseFloat(payment).toFixed(2)}</td>
+    `;
+        revenueBody.prepend(tr);
+        revenueData.push({ slot, payment });
+      }
+
+      function openGraphs() {
+        localStorage.setItem("allHistory", JSON.stringify(historyData));
+        localStorage.setItem("allRevenue", JSON.stringify(revenueData));
+        window.open("graphs.html", "_blank");
+      }
+
+      async function loadExistingData() {
+        try {
+          const histRes = await fetch("get_history.php");
+          const history = await histRes.json();
+          const revRes = await fetch("get_revenue.php");
+          const revData = await revRes.json();
+
+          historyBody.innerHTML = "";
+          revenueBody.innerHTML = "";
+
+          revenueTotal = parseFloat(revData.total) || 0;
+          totalRevenueEl.innerText = revenueTotal.toFixed(2);
+          transactionCount = 0;
+
+          history.forEach((entry) => {
+            const entryTime = new Date(entry.entry_time);
+            const exitTime = new Date(entry.exit_time);
+            const durationSec = entry.duration_sec;
+            const durationStr = formatDuration(durationSec);
+            const paymentFixed = parseFloat(entry.payment).toFixed(2);
+
+            // Need strictly ISO for ID matching
+            const isoEntry = entryTime.toISOString();
+
+            const rowData = {
+              slot: entry.slot,
+              entry: entryTime.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              exit: exitTime.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              duration: durationStr,
+              payment: paymentFixed,
+            };
+
+            const dataString = JSON.stringify(rowData).replace(/"/g, "&quot;");
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><strong>${entry.slot}</strong></td>
+                <td>${rowData.entry}</td>
+                <td>${rowData.exit}</td>
+                <td>${durationStr}</td>
+                <td style="color:var(--success);font-weight:bold">₱${paymentFixed}</td>
+                <td>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn-icon" onclick="openSpecificTicket(${dataString})" title="View Ticket">
+                            <i class="ph ph-receipt"></i>
+                        </button>
+
+                        <button class="btn-icon delete"
+                            onclick="deleteHistoryRow(this, '${entry.slot}', '${entry.entry_time}')"
+                            title="Delete">
+                            <i class="ph ph-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            historyBody.appendChild(tr);
+
+            // Populate Revenue Table with ID links
+            transactionCount++;
+            const revTr = document.createElement("tr");
+            revTr.dataset.slot = entry.slot;
+            revTr.dataset.entry = entry.entry_time; // Matches DB Format string
+
+            revTr.innerHTML = `
+                <td>#${transactionCount.toString().padStart(4, "0")}</td>
+                <td>${entry.slot}</td>
+                <td style="color:var(--success)">₱${paymentFixed}</td>
+            `;
+            revenueBody.appendChild(revTr);
+
+            historyData.push(rowData);
+            revenueData.push({
+              slot: entry.slot,
+              payment: parseFloat(entry.payment),
+            });
+          });
+
+          addLog(`Loaded ${history.length} records from database`);
+        } catch (err) {
+          addLog("Failed to load data from server");
+          console.error(err);
+        }
+      }
+
+      // --- Custom Modal Logic ---
+      let modalResolve = null;
+
+      function showConfirmModal(message, title = "Confirm Deletion") {
+        const modal = document.getElementById("confirm-modal");
+        const msgEl = document.getElementById("modal-msg");
+        const titleEl = document.getElementById("modal-title");
+
+        msgEl.innerText = message;
+        titleEl.innerText = title;
+        modal.style.display = "flex";
+
+        return new Promise((resolve) => {
+          modalResolve = resolve;
+        });
+      }
+
+      function closeModal(isConfirmed) {
+        document.getElementById("confirm-modal").style.display = "none";
+        if (modalResolve) {
+          modalResolve(isConfirmed);
+          modalResolve = null;
+        }
+      }
+
+      startCamera();
+      loadLayout();
+      loadExistingData();
+    </script>
+    <div id="confirm-modal" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-icon">
+          <i class="ph-fill ph-trash"></i>
+        </div>
+        <h3 id="modal-title">Confirm Deletion</h3>
+        <p id="modal-msg">Are you sure you want to remove this record?</p>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal(false)">Cancel</button>
+          <button class="btn-danger-solid" onclick="closeModal(true)">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
